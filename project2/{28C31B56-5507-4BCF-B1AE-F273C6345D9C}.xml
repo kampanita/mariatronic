@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<configuration date="2017/04/11" author="e.World Technology Ltd.">
+<project id="{28C31B56-5507-4BCF-B1AE-F273C6345D9C}" file="C:\Users\User\Documents\PHPMaker\Projects\project2 - copia.pmp" name="project2" product="PHPMaker" version="12.0" datetime="2017/04/11 15:08:18" languagefolder="phplang" userlevel="-2,&quot;Anonymous&quot;,0;">
+<table id="tempe" name="tempe" caption="tempe" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="view1" name="view1" caption="Historico Capturas" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="_kepa_php" name="_kepa.php" caption="Estado Actual" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="camera_php" name="camera.php" caption="Camara Web" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="grafico_php" name="grafico.php" caption="Grafica diaria" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+<table id="parametros" name="parametros" caption="Mantenimiento Params" userlevel="-2,&quot;Anonymous&quot;,0;" priv="1"/>
+</project></configuration>
