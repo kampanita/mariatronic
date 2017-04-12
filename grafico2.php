@@ -300,7 +300,7 @@ Page_Rendering();
       
     function drawChart() {
       var jsonData = $.ajax({
-          url: "getData2.php",
+          url: "getData2.php?tipo=1",
           dataType: "json",
           async: false
           }).responseText;

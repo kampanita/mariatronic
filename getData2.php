@@ -1,12 +1,15 @@
   <?php
 
     include('abre_conexion.php');
-     $query = "SELECT DATE_FORMAT(fecha,'%d-%m-%Y') as fecha, avg(temp) as temp FROM tempe 
-     
-      group by DATE_FORMAT(fecha,'%d-%m-%Y')
+
+     $query = "SELECT 
+                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp 
+               FROM tempe 
+      where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
+      group by DATE_FORMAT(hora,'%h:%i:%s')
       order BY fecha asc,hora asc
       ";
-   // where date_format(fecha,'%Y%m%d') = date_format(now() - INTERVAL 1 DAY,'%Y%m%d')
+    
     $result = mysqli_query($conexion_db,$query);
    
    

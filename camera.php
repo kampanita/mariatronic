@@ -275,7 +275,7 @@ $camera_php->Page_Init();
 
 // Page main
 $camera_php->Page_Main();
-
+ 
 // Global Page Rendering event (in userfn*.php)
 Page_Rendering();
 ?>
@@ -284,9 +284,11 @@ Page_Rendering();
 <div class="ewToolbar">
 <?php $Breadcrumb->Render(); ?>
 <?php echo $Language->SelectionForm(); ?>
-<div class="clearfix"></div>
- <iframe src="http://administrator:admin@192.168.0.3/media/cam0/still.jpg" style="border: 1;">Your browser doesn't support iFrames.</iframe>
+<div style="heigth:100%;width=100%;" class="clearfix"></div>
+  <iframe height="600px" width="1200px" style="width:100%;" src="http://192.168.1.104:2222/" style="border: 1;">Your browser doesn't support iFrames.</iframe>
+  <!--<iframe height="600px" width="1200px" style="width:100%;" src="http://192.168.1.104:3334/" style="border: 1;">Your browser doesn't support iFrames.</iframe>-->
 </div>
+
 <?php } ?>
 <?php if (EW_DEBUG_ENABLED) echo ew_DebugMsg(); ?>
 <?php include_once "footer.php" ?>
