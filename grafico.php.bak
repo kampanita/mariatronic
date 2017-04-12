@@ -300,7 +300,7 @@ Page_Rendering();
       
     function drawChart() {
       var jsonData = $.ajax({
-          url: "getData.php",
+          url: "getData.php?tipo=0",
           dataType: "json",
           async: false
           }).responseText;
@@ -316,7 +316,7 @@ Page_Rendering();
         width: 1800,	
         height: 600,
         lineWidth: 1,
-        colors: ['red'],
+        colors: ['red','green'],
         axes: {
           x: {
             0: {side: 'top'}
@@ -336,7 +336,7 @@ Page_Rendering();
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-<!--     <div><a href="grafico2.php"><span class="label label-success">AYER</span></a></div> -->
+    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> -->
   </div>
   </body>
 </html>

@@ -3,7 +3,7 @@
     include('abre_conexion.php');
 
      $query = "SELECT 
-                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp 
+                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp ,avg(hum) as hum
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
       group by DATE_FORMAT(hora,'%h:%i:%s')
@@ -29,8 +29,9 @@ $table['cols'] = array(
 	// but you can change them if they are not
 	  
     array('label' => 'fecha', 'type' => 'string'),
-   	array('label' => 'temp', 'type' => 'number')
-);
+   	array('label' => 'temp', 'type' => 'number'),
+   	array('label' => 'hum', 'type' => 'number')
+   	);
 
 $rows = array();
 while($r = mysqli_fetch_assoc($result)) {
@@ -39,9 +40,10 @@ while($r = mysqli_fetch_assoc($result)) {
 	
 	$temp[] = array('v' => (string)$r['fecha']);
 	$temp[] = array('v' =>  (float)$r['temp']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
+  $temp[] = array('v' =>  (float)$r['hum']);	
 	
 	// insert the temp array into $rows
-    $rows[] = array('c' => $temp);
+   $rows[] = array('c' => $temp);
 }
 
 // populate the table with rows of data
