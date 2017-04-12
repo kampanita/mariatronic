@@ -336,7 +336,7 @@ Page_Rendering();
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> -->
+    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> 
   </div>
   </body>
 </html>

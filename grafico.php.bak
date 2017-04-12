@@ -316,7 +316,7 @@ Page_Rendering();
         width: 1800,	
         height: 600,
         lineWidth: 1,
-        colors: ['red','green'],
+        colors: ['green','red'],
         axes: {
           x: {
             0: {side: 'top'}
