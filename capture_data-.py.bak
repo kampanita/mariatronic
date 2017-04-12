@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import serial
+import json
+import MySQLdb
+import time
+
+#arduino = serial.Serial('/dev/ttyUSB0',9600)
+db = MySQLdb.connect("localhost","root","indarra","temperatura")
+
+while True:
+    print "espero 5 segunditos"
+    time.sleep(5)
+    #character= arduino.readline()
+    character = '{"temperature":23,"humidity":50,"co2ppm":1200,"higrometro":434,"luces":565,"maqhum":1,"maqdesh":1;"maqcale":1,"modman":0,"periodo":8}'
+    print "he recibido " + character
+
+    
+    MyJson = character
+    
+    if character != '\n':
+        try:
+            print "voy a desSerializar" 
+            data=json.loads(character)
+            print "desSerializado"
+            curs = db.cursor()
+            curs.execute("INSERT INTO tempe(fecha,hora,temp,hum,co2ppm,higromet,luz,maqhum,maqdesh,maqcale,modman,periodo)values(now(),now(),"+str(data['temperature'])+","+str(data['humidity'])+","+str(data['co2ppm'])+","+str(data['higrometro'])+","+str(data['luces'])+","+str(data['maqhum'])+","+str(data['maqdesh'])+","+str(data['maqcale'])+","+str(data['modman'])+","+str(data['periodo'])+")")
+            db.commit()
+            print "Datos guardados en la bbdd"
+        except ValueError:
+            print "Error guardando en la base de datos"
+
+db.close()
+arduino.close()
