@@ -8,7 +8,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-
+//
 //
 // Page class
 //
@@ -309,7 +309,7 @@ Page_Rendering();
       var data = new google.visualization.DataTable(jsonData);
       var options = {
         chart: {
-        	//curveType: 'function',
+        	curveType: 'function',
           title: 'Temperature at time',
           subtitle: 'in ºCelsius'
         },

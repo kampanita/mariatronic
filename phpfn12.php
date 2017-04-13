@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('Europe/Madrid');
 /**
  * PHPMaker Common classes and functions
  * (C) 2002-2015 e.World Technology Limited. All rights reserved.

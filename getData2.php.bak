@@ -3,11 +3,11 @@
     include('abre_conexion.php');
 
      $query = "SELECT 
-                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp ,avg(hum) as hum
+                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i:%s')) as fecha, avg(temp) as temp ,avg(hum) as hum
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
-      group by DATE_FORMAT(hora,'%h:%i:%s')
-      order BY fecha asc,hora asc
+      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i:%s'))
+      order BY id asc,fecha asc, hora asc
       ";
     
     $result = mysqli_query($conexion_db,$query);
@@ -40,10 +40,10 @@ while($r = mysqli_fetch_assoc($result)) {
 	
 	$temp[] = array('v' => (string)$r['fecha']);
 	$temp[] = array('v' =>  (float)$r['temp']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
-  $temp[] = array('v' =>  (float)$r['hum'])	
+  $temp[] = array('v' =>  (float)$r['hum']);	
 	
 	// insert the temp array into $rows
-    $rows[] = array('c' => $temp);
+   $rows[] = array('c' => $temp);
 }
 
 // populate the table with rows of data

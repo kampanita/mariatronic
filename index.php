@@ -7,7 +7,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-
+date_default_timezone_set('Europe/Madrid');
 //
 // Page class
 //
@@ -304,7 +304,7 @@ if (!isset($default)) $default = new cdefault();
 
 // Page init
 $default->Page_Init();
-
+date_default_timezone_set('Europe/Madrid');
 // Page main
 $default->Page_Main();
 ?>

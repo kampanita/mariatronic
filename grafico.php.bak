@@ -8,6 +8,8 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
+date_default_timezone_set('Europe/Madrid');
+
 
 //
 // Page class
@@ -309,7 +311,7 @@ Page_Rendering();
       var data = new google.visualization.DataTable(jsonData);
       var options = {
         chart: {
-        	//curveType: 'function',
+        	curveType: 'function',
           title: 'Temperature at time',
           subtitle: 'in ºCelsius'
         },
@@ -333,10 +335,10 @@ Page_Rendering();
 
   <body>
     <!--Div that will hold the pie chart-->
-    <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
+    <div><h3><span class="label label-success"><?php echo 'Fecha actual: @ '.date('d-m-Y H:i:s',time()); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> -->
+    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> 
   </div>
   </body>
 </html>

@@ -20,7 +20,7 @@ class cdefault {
 	var $PageID = 'default';
 
 	// Project ID
-	var $ProjectID = "{28C31B56-5507-4BCF-B1AE-F273C6345D9C}";
+	var $ProjectID = "{524C14CD-A0E3-4083-AF86-06203077AB82}";
 
 	// Page object name
 	var $PageObjName = 'default';
@@ -253,6 +253,12 @@ class cdefault {
 		$this->Page_Terminate("_kepa.php"); // Exit and go to default page
 		if ($Security->IsLoggedIn())
 			$this->Page_Terminate("view1list.php");
+		if ($Security->IsLoggedIn())
+			$this->Page_Terminate("camera.php");
+		if ($Security->IsLoggedIn())
+			$this->Page_Terminate("grafico.php");
+		if ($Security->IsLoggedIn())
+			$this->Page_Terminate("parametroslist.php");
 		if ($Security->IsLoggedIn()) {
 			$this->setFailureMessage($Language->Phrase("NoPermission") . "<br><br><a href=\"logout.php\">" . $Language->Phrase("BackToLogin") . "</a>");
 		} else {
@@ -290,7 +296,7 @@ class cdefault {
 	}
 }
 ?>
-<?php ew_Header(FALSE) ?>
+<?php ew_Header(TRUE) ?>
 <?php
 
 // Create page object
@@ -298,7 +304,7 @@ if (!isset($default)) $default = new cdefault();
 
 // Page init
 $default->Page_Init();
-
+date_default_timezone_set('Europe/Madrid');
 // Page main
 $default->Page_Main();
 ?>

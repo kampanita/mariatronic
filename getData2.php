@@ -3,11 +3,11 @@
     include('abre_conexion.php');
 
      $query = "SELECT 
-                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp ,avg(hum) as hum
+                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%H:%i:%s')) as fecha, avg(temp) as temp ,avg(hum) as hum
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
-      group by DATE_FORMAT(hora,'%h:%i:%s')
-      order BY fecha asc,hora asc
+      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i:%s'))
+      order BY id asc,fecha asc, hora asc
       ";
     
     $result = mysqli_query($conexion_db,$query);

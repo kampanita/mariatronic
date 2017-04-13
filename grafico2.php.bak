@@ -8,7 +8,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-
+date_default_timezone_set('Europe/Madrid');
 //
 // Page class
 //
@@ -309,14 +309,14 @@ Page_Rendering();
       var data = new google.visualization.DataTable(jsonData);
       var options = {
         chart: {
-        	//curveType: 'function',
+        	curveType: 'function',
           title: 'Temperature at time',
           subtitle: 'in ºCelsius'
         },
         width: 1800,	
         height: 600,
         lineWidth: 1,
-        colors: ['red'],
+        colors: ['green','red'],
         axes: {
           x: {
             0: {side: 'top'}
