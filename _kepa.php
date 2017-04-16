@@ -317,8 +317,6 @@ Page_Rendering();
     $result = $conexion_db->query($query);
     $registro = $result->fetch_array(MYSQLI_ASSOC);
      
-      
-
      if ($registro['maqcale']==1)  { $maqcale = "<td><span class='btn btn-success'/>On</td>"; } else {$maqcale="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
