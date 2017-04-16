@@ -321,9 +321,9 @@ Page_Rendering();
      if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
      
-     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion</td>"; }	
+     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento</td>"; } else {$periodo="<td><span class='btn btn-danger'/>Floracion</td>"; }	
   
-     if ($registro['horasluz']==1)   { $horas = "<td><span class='btn btn-info'/>18/6</td>"; } else {$horas="<td><span class='btn btn-warning'/>12/12</td>"; }	
+     if ($registro['horasluz']==1)   { $horas = "<td><span class='btn btn-danger'/>18/6</td>"; } else {$horas="<td><span class='btn btn-info'/>12/12</td>"; }	
      #el valor de riego, menor de 520 que salga con fondo verde, entre 520 y 700 amarillo, a partir de 700 rojo
      
      
@@ -337,7 +337,8 @@ Page_Rendering();
      
      
      if ($registro['luz']>=400)   { $luz = "<td><span class='btn btn-success'/>On ( ".$registro['luz']." )</td>"; } else {$luz="<td><span class='btn btn-danger'/>Off ( ".$registro['luz']." )</td>"; }	
-    
+     $co2="<td><span class='btn btn-default'/>".$registro['co2ppm']."</td>";
+     
      echo "
     <thead>
     <tr>
@@ -350,10 +351,10 @@ Page_Rendering();
 
     <tr>
 
-                <td>".$registro['fecha']."</td>
-                <td>".$registro['hora']."</td>
-                <td>".$registro['temp']." ºC</td>
-                <td>".$registro['hum']." %</td>
+                <td><span class='w3-btn'/>".$registro['fecha']."</td>
+                <td><span class='w3-btn'/>".$registro['hora']."</td>
+                <td><span class='w3-btn'/>".$registro['temp']." ºC</td>
+                <td><span class='w3-btn'/>".$registro['hum']." %</td>
     </tr>
     <thead>
     <tr>
@@ -367,7 +368,7 @@ Page_Rendering();
       <tr>
   
                 ".$luz."
-                <td>".$registro['co2ppm']."</td>
+                ".$co2."
                 ".$higro."
                 ".$horas."
     

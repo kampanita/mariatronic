@@ -108,17 +108,20 @@ class cview1 extends cTable {
 		$this->fields['maqcale'] = &$this->maqcale;
 
 		// modman
-		$this->modman = new cField('view1', 'view1', 'x_modman', 'modman', '`modman`', '`modman`', 16, -1, FALSE, '`modman`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->modman = new cField('view1', 'view1', 'x_modman', 'modman', '`modman`', '`modman`', 16, -1, FALSE, '`modman`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'SELECT');
+		$this->modman->OptionCount = 2;
 		$this->modman->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['modman'] = &$this->modman;
 
 		// periodo
-		$this->periodo = new cField('view1', 'view1', 'x_periodo', 'periodo', '`periodo`', '`periodo`', 16, -1, FALSE, '`periodo`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->periodo = new cField('view1', 'view1', 'x_periodo', 'periodo', '`periodo`', '`periodo`', 16, -1, FALSE, '`periodo`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'SELECT');
+		$this->periodo->OptionCount = 2;
 		$this->periodo->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['periodo'] = &$this->periodo;
 
 		// horasluz
-		$this->horasluz = new cField('view1', 'view1', 'x_horasluz', 'horasluz', '`horasluz`', '`horasluz`', 16, -1, FALSE, '`horasluz`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->horasluz = new cField('view1', 'view1', 'x_horasluz', 'horasluz', '`horasluz`', '`horasluz`', 16, -1, FALSE, '`horasluz`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'SELECT');
+		$this->horasluz->OptionCount = 2;
 		$this->horasluz->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['horasluz'] = &$this->horasluz;
 
@@ -697,15 +700,27 @@ class cview1 extends cTable {
 		$this->maqcale->ViewCustomAttributes = "";
 
 		// modman
-		$this->modman->ViewValue = $this->modman->CurrentValue;
+		if (strval($this->modman->CurrentValue) <> "") {
+			$this->modman->ViewValue = $this->modman->OptionCaption($this->modman->CurrentValue);
+		} else {
+			$this->modman->ViewValue = NULL;
+		}
 		$this->modman->ViewCustomAttributes = "";
 
 		// periodo
-		$this->periodo->ViewValue = $this->periodo->CurrentValue;
+		if (strval($this->periodo->CurrentValue) <> "") {
+			$this->periodo->ViewValue = $this->periodo->OptionCaption($this->periodo->CurrentValue);
+		} else {
+			$this->periodo->ViewValue = NULL;
+		}
 		$this->periodo->ViewCustomAttributes = "";
 
 		// horasluz
-		$this->horasluz->ViewValue = $this->horasluz->CurrentValue;
+		if (strval($this->horasluz->CurrentValue) <> "") {
+			$this->horasluz->ViewValue = $this->horasluz->OptionCaption($this->horasluz->CurrentValue);
+		} else {
+			$this->horasluz->ViewValue = NULL;
+		}
 		$this->horasluz->ViewCustomAttributes = "";
 
 		// fechaini
@@ -872,20 +887,17 @@ class cview1 extends cTable {
 		// modman
 		$this->modman->EditAttrs["class"] = "form-control";
 		$this->modman->EditCustomAttributes = "";
-		$this->modman->EditValue = $this->modman->CurrentValue;
-		$this->modman->PlaceHolder = ew_RemoveHtml($this->modman->FldCaption());
+		$this->modman->EditValue = $this->modman->Options(TRUE);
 
 		// periodo
 		$this->periodo->EditAttrs["class"] = "form-control";
 		$this->periodo->EditCustomAttributes = "";
-		$this->periodo->EditValue = $this->periodo->CurrentValue;
-		$this->periodo->PlaceHolder = ew_RemoveHtml($this->periodo->FldCaption());
+		$this->periodo->EditValue = $this->periodo->Options(TRUE);
 
 		// horasluz
 		$this->horasluz->EditAttrs["class"] = "form-control";
 		$this->horasluz->EditCustomAttributes = "";
-		$this->horasluz->EditValue = $this->horasluz->CurrentValue;
-		$this->horasluz->PlaceHolder = ew_RemoveHtml($this->horasluz->FldCaption());
+		$this->horasluz->EditValue = $this->horasluz->Options(TRUE);
 
 		// fechaini
 		$this->fechaini->EditAttrs["class"] = "form-control";

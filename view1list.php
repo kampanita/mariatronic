@@ -6,6 +6,7 @@ ob_start(); // Turn on output buffering
 <?php include_once ((EW_USE_ADODB) ? "adodb5/adodb.inc.php" : "ewmysql12.php") ?>
 <?php include_once "phpfn12.php" ?>
 <?php include_once "view1info.php" ?>
+<?php include_once "usuariosinfo.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
 
@@ -251,6 +252,7 @@ class cview1_list extends cview1 {
 	//
 	function __construct() {
 		global $conn, $Language;
+		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
 		$this->TokenTimeout = ew_SessionTimeoutTime();
 
@@ -281,6 +283,9 @@ class cview1_list extends cview1 {
 		$this->MultiDeleteUrl = "view1delete.php";
 		$this->MultiUpdateUrl = "view1update.php";
 
+		// Table object (usuarios)
+		if (!isset($GLOBALS['usuarios'])) $GLOBALS['usuarios'] = new cusuarios();
+
 		// Page ID
 		if (!defined("EW_PAGE_ID"))
 			define("EW_PAGE_ID", 'list', TRUE);
@@ -294,6 +299,12 @@ class cview1_list extends cview1 {
 
 		// Open connection
 		if (!isset($conn)) $conn = ew_Connect($this->DBID);
+
+		// User table object (usuarios)
+		if (!isset($UserTable)) {
+			$UserTable = new cusuarios();
+			$UserTableConn = Conn($UserTable->DBID);
+		}
 
 		// List options
 		$this->ListOptions = new cListOptions();
@@ -333,6 +344,9 @@ class cview1_list extends cview1 {
 		// Security
 		$Security = new cAdvancedSecurity();
 		if (!$Security->IsLoggedIn()) $Security->AutoLogin();
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loading();
+		$Security->LoadCurrentUserLevel($this->ProjectID . $this->TableName);
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loaded();
 		if (!$Security->IsLoggedIn()) $this->Page_Terminate(ew_GetUrl("login.php"));
 		$this->CurrentAction = (@$_GET["a"] <> "") ? $_GET["a"] : @$_POST["a_list"]; // Set up current action
 
@@ -587,6 +601,8 @@ class cview1_list extends cview1 {
 
 		// Build filter
 		$sFilter = "";
+		if (!$Security->CanList())
+			$sFilter = "(0=1)"; // Filter all records
 		ew_AddFilter($sFilter, $this->DbDetailFilter);
 		ew_AddFilter($sFilter, $this->SearchWhere);
 
@@ -884,6 +900,7 @@ class cview1_list extends cview1 {
 	function BasicSearchWhere($Default = FALSE) {
 		global $Security;
 		$sSearchStr = "";
+		if (!$Security->CanSearch()) return "";
 		$sSearchKeyword = ($Default) ? $this->BasicSearch->KeywordDefault : $this->BasicSearch->Keyword;
 		$sSearchType = ($Default) ? $this->BasicSearch->TypeDefault : $this->BasicSearch->Type;
 		if ($sSearchKeyword <> "") {
@@ -1308,6 +1325,11 @@ class cview1_list extends cview1 {
 		// Hide search options
 		if ($this->Export <> "" || $this->CurrentAction <> "")
 			$this->SearchOptions->HideAllOptions();
+		global $Security;
+		if (!$Security->CanSearch()) {
+			$this->SearchOptions->HideAllOptions();
+			$this->FilterOptions->HideAllOptions();
+		}
 	}
 
 	function SetupListOptionsExt() {
@@ -1577,15 +1599,27 @@ class cview1_list extends cview1 {
 		$this->maqcale->ViewCustomAttributes = "";
 
 		// modman
-		$this->modman->ViewValue = $this->modman->CurrentValue;
+		if (strval($this->modman->CurrentValue) <> "") {
+			$this->modman->ViewValue = $this->modman->OptionCaption($this->modman->CurrentValue);
+		} else {
+			$this->modman->ViewValue = NULL;
+		}
 		$this->modman->ViewCustomAttributes = "";
 
 		// periodo
-		$this->periodo->ViewValue = $this->periodo->CurrentValue;
+		if (strval($this->periodo->CurrentValue) <> "") {
+			$this->periodo->ViewValue = $this->periodo->OptionCaption($this->periodo->CurrentValue);
+		} else {
+			$this->periodo->ViewValue = NULL;
+		}
 		$this->periodo->ViewCustomAttributes = "";
 
 		// horasluz
-		$this->horasluz->ViewValue = $this->horasluz->CurrentValue;
+		if (strval($this->horasluz->CurrentValue) <> "") {
+			$this->horasluz->ViewValue = $this->horasluz->OptionCaption($this->horasluz->CurrentValue);
+		} else {
+			$this->horasluz->ViewValue = NULL;
+		}
 		$this->horasluz->ViewCustomAttributes = "";
 
 		// fechaini
@@ -1845,8 +1879,14 @@ fview1list.ValidateRequired = false;
 <?php } ?>
 
 // Dynamic selection lists
-// Form object for search
+fview1list.Lists["x_modman"] = {"LinkField":"","Ajax":false,"AutoFill":false,"DisplayFields":["","","",""],"ParentFields":[],"ChildFields":[],"FilterFields":[],"Options":[],"Template":""};
+fview1list.Lists["x_modman"].Options = <?php echo json_encode($view1->modman->Options()) ?>;
+fview1list.Lists["x_periodo"] = {"LinkField":"","Ajax":false,"AutoFill":false,"DisplayFields":["","","",""],"ParentFields":[],"ChildFields":[],"FilterFields":[],"Options":[],"Template":""};
+fview1list.Lists["x_periodo"].Options = <?php echo json_encode($view1->periodo->Options()) ?>;
+fview1list.Lists["x_horasluz"] = {"LinkField":"","Ajax":false,"AutoFill":false,"DisplayFields":["","","",""],"ParentFields":[],"ChildFields":[],"FilterFields":[],"Options":[],"Template":""};
+fview1list.Lists["x_horasluz"].Options = <?php echo json_encode($view1->horasluz->Options()) ?>;
 
+// Form object for search
 var CurrentSearchForm = fview1listsrch = new ew_Form("fview1listsrch");
 </script>
 <script type="text/javascript">
@@ -1886,6 +1926,8 @@ var CurrentSearchForm = fview1listsrch = new ew_Form("fview1listsrch");
 
 	// Set no record found message
 	if ($view1->CurrentAction == "" && $view1_list->TotalRecs == 0) {
+		if (!$Security->CanList())
+			$view1_list->setWarningMessage($Language->Phrase("NoPermission"));
 		if ($view1_list->SearchWhere == "0=101")
 			$view1_list->setWarningMessage($Language->Phrase("EnterSearchCriteria"));
 		else
@@ -1893,7 +1935,7 @@ var CurrentSearchForm = fview1listsrch = new ew_Form("fview1listsrch");
 	}
 $view1_list->RenderOtherOptions();
 ?>
-<?php if ($Security->IsLoggedIn()) { ?>
+<?php if ($Security->CanSearch()) { ?>
 <?php if ($view1->Export == "" && $view1->CurrentAction == "") { ?>
 <form name="fview1listsrch" id="fview1listsrch" class="form-inline ewForm" action="<?php echo ew_CurrentPage() ?>">
 <?php $SearchPanelClass = ($view1_list->SearchWhere <> "") ? " in" : " in"; ?>
