@@ -514,10 +514,22 @@
 <field id="maqcale"><phrase id="fldcaption" value="maqcale"/>
 </field>
 <field id="modman"><phrase id="fldcaption" value="modman"/>
+<phrase id="fldtagvalue1" value="0"/>
+<phrase id="fldtagcaption1" value="Off"/>
+<phrase id="fldtagvalue2" value="1"/>
+<phrase id="fldtagcaption2" value="On"/>
 </field>
 <field id="periodo"><phrase id="fldcaption" value="periodo"/>
+<phrase id="fldtagvalue1" value="1"/>
+<phrase id="fldtagcaption1" value="Crecimiento"/>
+<phrase id="fldtagvalue2" value="0"/>
+<phrase id="fldtagcaption2" value="Floracion"/>
 </field>
 <field id="horasluz"><phrase id="fldcaption" value="horasluz"/>
+<phrase id="fldtagvalue1" value="0"/>
+<phrase id="fldtagcaption1" value="12/12"/>
+<phrase id="fldtagvalue2" value="1"/>
+<phrase id="fldtagcaption2" value="18/6"/>
 </field>
 <field id="fechaini"><phrase id="fldcaption" value="fechaini"/>
 </field>
