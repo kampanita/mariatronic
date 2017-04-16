@@ -1,7 +1,13 @@
+<?php
+$page = $_SERVER['PHP_SELF'];
+$sec = "60";
+?>
+
 <head>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <meta http-equiv="refresh" content="<?php echo $sec?>;URL='<?php echo $page?>'">
 </head>
 
 <?php
@@ -321,7 +327,7 @@ Page_Rendering();
      if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
      
-     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento</td>"; } else {$periodo="<td><span class='btn btn-danger'/>Floracion</td>"; }	
+     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info' aria-describedby='Crecimiento'/>Crecimiento</td>"; } else {$periodo="<td><span class='btn btn-danger' aria-describedby='Floracion'/>Floracion</td>"; }	
   
      if ($registro['horasluz']==1)   { $horas = "<td><span class='btn btn-danger'/>18/6</td>"; } else {$horas="<td><span class='btn btn-info'/>12/12</td>"; }	
      #el valor de riego, menor de 520 que salga con fondo verde, entre 520 y 700 amarillo, a partir de 700 rojo
