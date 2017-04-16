@@ -1,7 +1,0 @@
-<?php
-$hotsdb = "localhost";    // sera el valor de nuestra BD
-$basededatos = "pihome";    // sera el valor de nuestra BD
-
-$usuariodb = "root";    // sera el valor de nuestra BD
-$clavedb = "";    // sera el valor de nuestra BD
-?>
