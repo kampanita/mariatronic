@@ -314,14 +314,16 @@ Page_Rendering();
  ?>
  
 <div class="container-fluid">
+
         <h3><span class="label label-default">IP Actual</span></h3>
 
 <?php 
    $web_page = "http://iptools.bizhat.com/ipv4.php";
-   print( "<h4 class='panel panel-danger'> La ip externa actual es: <br><br>");
+   print( "<div class='col-md-3'><h4 class='panel panel-danger'> La ip externa actual es: <br><br>");
    $res= getHtml($web_page,null);
    print ' '.$res;
-   print ("<br><br></h4>");
+   #include($web_page);
+   print ("<br><br></h4></div>");
 ?>  
 </div>
 
