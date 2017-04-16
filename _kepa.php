@@ -324,7 +324,17 @@ Page_Rendering();
      if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento ".$parametros['horas_crecimiento']."</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion".$parametros['horas_floracion']."</td>"; }	
   
      if ($registro['horasluz']==1)   { $horas = "<td><span class='btn btn-info'/>18/6</td>"; } else {$horas="<td><span class='btn btn-warning'/>12/12</td>"; }	
-  
+     #el valor de riego, menor de 520 que salga con fondo verde, entre 520 y 700 amarillo, a partir de 700 rojo
+     
+     
+     if ($registro['higromet']<520)   { $higro = "<td><span class='btn btn-success'/>".$registro['higromet']."</td>"; } else {
+         if ($registro['higromet']>=520 and $registro['higromet']<700)   
+             { $higro = "<td><span class='btn btn-warning'/>".$registro['higromet']."</td>"; } 
+             else 
+             {$higro="<td><span class='btn btn-danger'/>".$registro['higromet']."</td>"; }	
+     }
+     
+     
      
      if ($registro['luz']>=400)   { $luz = "<td><span class='btn btn-success'/>On ( ".$registro['luz']." )</td>"; } else {$luz="<td><span class='btn btn-danger'/>Off ( ".$registro['luz']." )</td>"; }	
     
@@ -358,7 +368,7 @@ Page_Rendering();
   
                 ".$luz."
                 <td>".$registro['co2ppm']."</td>
-                <td>".$registro['higromet']."</td>
+                ".$higro."
                 ".$horas."
     
     </tr>
