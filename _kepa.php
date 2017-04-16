@@ -322,6 +322,7 @@ Page_Rendering();
      if ($registro['maqcale']==1)  { $maqcale = "<td><span class='btn btn-success'/>On</td>"; } else {$maqcale="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['luz']>=400)   { $luz = "<td><span class='btn btn-success'/>On</td>"; } else {$luz="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento ".$parametros['horas_crecimiento']."</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion ".$parametros['horas_floracion']."</td>"; }	
      echo "
     <thead>
