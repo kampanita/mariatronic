@@ -300,70 +300,77 @@ Page_Rendering();
         <div class="table-responsive">
 
  <center>
-        <table class="table table-stripped table-responsive">
+   <table class="table table-stripped">
+    
+  <?php
+
+    include('abre_conexion.php');
+    
+    $que = "select horas_crecimiento,horas_floracion from parametros";
+    $result = $conexion_db->query($que);
+    
+    $parametros= $result->fetch_array(MYSQLI_ASSOC);
+    
+    #print 'crecimiento:'.$parametros['horas_crecimiento'];
+    
+    $query = "select * from tempe ORDER BY fecha DESC,hora desc LIMIT 1";
+    $result = $conexion_db->query($query);
+    $registro = $result->fetch_array(MYSQLI_ASSOC);
+     
+     
+
+     if ($registro['maqcale']==1)  { $maqcale = "<td><span class='btn btn-success'/>On</td>"; } else {$maqcale="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-success'/>Crecimiento ".$parametros['horas_crecimiento']."</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion ".$parametros['horas_floracion']."</td>"; }	
+     echo "
     <thead>
-    <tr class="">
+    <tr>
       <th>Fecha</th>
       <th>Hora</th>
       <th>Temperatura</th>
       <th>Humedad</th>
-      <th>Luz</th>
     </tr>
     </thead>
 
     <tr>
 
-  <?php
-
-    include('abre_conexion.php');
-
-    $query = "select * from tempe ORDER BY fecha DESC,hora desc LIMIT 1";
-    $result = $conexion_db->query($query);
-    while ($registro = $result->fetch_array(MYSQLI_ASSOC))
-     {
-     
-
-     if ($registro['maqcale']==1)  { $maqcale = 'On'; } else {$maqcale='Off'; }	
-     if ($registro['maqhum']==1)  { $maqhum = 'On'; } else {$maqhum='Off'; }	
-     if ($registro['maqcale']==1)  { $maqdesh = 'On'; } else {$maqdesh='Off'; }	
-     echo "
                 <td>".$registro['fecha']."</td>
                 <td>".$registro['hora']."</td>
                 <td>".$registro['temp']." ºC</td>
                 <td>".$registro['hum']." %</td>
-                <td>".$registro['luz']."</td>
-     ";}
-
-?>
     </tr>
-    <thead class="thead-inverse">
+    <thead>
     <tr>
+    
+      <th>Luz</th>
       <th>CO2</th>
       <th>Riego</th>
+    </tr>
+    </thead>
+      <tr>
+                <td>".$registro['luz']."</td>
+                <td>".$registro['co2ppm']."</td>
+                <td>".$registro['higromet']."</td>
+    
+    </tr>
+    <thead class='thead-inverse'>
+    <tr>
       <th>Calefactor</th>
       <th>Humidificador</th>
       <th>Deshumidificador</th>
+      <th>Periodo</th>
     </tr>
     </thead>
-
     <tr>
-<?php
-    include('abre_conexion.php');
-
-    $query = "select * from tempe ORDER BY id DESC LIMIT 1";
-    $result = $conexion_db->query($query);
-    while ($registro = $result->fetch_array(MYSQLI_ASSOC)) {
-echo "
-
-                <td>".$registro['co2ppm']."</td>
-                <td>".$registro['higromet']."</td>
-                <td><span class='btn btn-success'/>".$maqcale."</td>
-                <td><span class='btn btn-success'/>".$maqhum."</td>
-                <td><span class='btn btn-success'/>".$maqdesh."</td>
-      ";
-      }
+     
+                ".$maqcale."
+                ".$maqhum."
+                ".$maqdesh."
+                ".$periodo."
+  
+    </tr>";
 ?>
-    </tr>
    </table>
   </center>
 </div>

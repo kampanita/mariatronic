@@ -8,14 +8,16 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-//
+//date_default_timezone_set('Europe/Madrid');
+
+
 //
 // Page class
 //
 
-$grafico_php = NULL; // Initialize page object first
+$grafico2_php = NULL; // Initialize page object first
 
-class cgrafico_php {
+class cgrafico2_php {
 
 	// Page ID
 	var $PageID = 'custom';
@@ -268,7 +270,7 @@ class cgrafico_php {
 <?php
 
 // Create page object
-if (!isset($grafico2_php)) $grafico2_php = new cgrafico_php();
+if (!isset($grafico2_php)) $grafico2_php = new cgrafico2_php();
 
 // Page init
 $grafico2_php->Page_Init();
@@ -300,7 +302,7 @@ Page_Rendering();
       
     function drawChart() {
       var jsonData = $.ajax({
-          url: "getData2.php?tipo=1",
+          url: "getData2.php?tipo=0",
           dataType: "json",
           async: false
           }).responseText;
@@ -316,7 +318,7 @@ Page_Rendering();
         width: 1400,	
         height: 600,
         lineWidth: 1,
-        colors: ['green','red','blue','yellow','brown'],
+         colors: ['green','red','blue','yellow','brown'],
         axes: {
           x: {
             0: {side: 'top'}
@@ -333,10 +335,10 @@ Page_Rendering();
 
   <body>
     <!--Div that will hold the pie chart-->
-    <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
+    <div><h3><span class="label label-success"><?php echo 'Fecha actual: @ '.date('d-m-Y H:i:s',time()); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-     <h2>	<div><a href="grafico.php"><span class="label label-success">HOY</span></a></div></h2>
+     <h3> <div><a href="grafico.php"><span class="label label-success">Diario</span></a></div> </h3>
   </div>
   </body>
 </html>
@@ -345,5 +347,5 @@ Page_Rendering();
 <?php if (EW_DEBUG_ENABLED) echo ew_DebugMsg(); ?>
 <?php include_once "footer.php" ?>
 <?php
-$grafico_php->Page_Terminate();
+$grafico2_php->Page_Terminate();
 ?>

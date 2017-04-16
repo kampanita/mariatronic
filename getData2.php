@@ -3,22 +3,22 @@
     include('abre_conexion.php');
 
      $query = "SELECT 
-                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%H:%i')) as fecha, avg(temp) as temp ,avg(hum) as hum, avg(co2ppm) as co2ppm, avg(higromet) as higromet, avg(luz) as luz
+                  DATE_FORMAT(hora,'%H:%i') as fecha, avg(temp) as temp ,avg(hum) as hum
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
-      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i'))
+      group by DATE_FORMAT(hora,'%h:%i')
       order BY id asc,fecha asc, hora asc
       ";
      
       $query = "SELECT 
-                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%H:%i')) as fecha, avg(temp) as temp ,avg(hum) as hum
+                   DATE_FORMAT(hora,'%H:%i') as fecha, avg(temp) as temp ,avg(hum) as hum
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
-      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i'))
+      group by DATE_FORMAT(hora,'%h:%i')
       order BY id asc,fecha asc, hora asc
       ";
     $result = mysqli_query($conexion_db,$query);
-   
+  //  print $query;
    
    
 // write your SQL query here (you may use parameters from $_GET or $_POST if you need them)

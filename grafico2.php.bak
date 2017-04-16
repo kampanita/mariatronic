@@ -290,6 +290,7 @@ Page_Rendering();
     <!--Load the AJAX API-->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
     <script type="text/javascript">
     
     // Load the Visualization API and the piechart package.
@@ -313,7 +314,7 @@ Page_Rendering();
           title: 'Temperature at time',
           subtitle: 'in ºCelsius'
         },
-        width: 1800,	
+        width: 1400,	
         height: 600,
         lineWidth: 1,
         colors: ['green','red','blue','yellow','brown'],
@@ -328,6 +329,9 @@ Page_Rendering();
       chart.draw(data, options);
     }
 
+
+
+    
     </script>
   </head>
 
@@ -335,9 +339,13 @@ Page_Rendering();
     <!--Div that will hold the pie chart-->
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
     
-    <div id="chart_div"></div>
+
+
+
      <h2>	<div><a href="grafico.php"><span class="label label-success">HOY</span></a></div></h2>
-  </div>
+  
+  
+</div>
   </body>
 </html>
 </div>
