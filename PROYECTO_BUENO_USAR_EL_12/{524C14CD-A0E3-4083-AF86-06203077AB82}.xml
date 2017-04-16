@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <configuration date="2017/04/16" author="e.World Technology Ltd.">
-<project id="{524C14CD-A0E3-4083-AF86-06203077AB82}" file="C:\Users\User\Documents\PHPMaker\Projects\PROYECTO_BUENO_USAR_EL_12.pmp" name="PROYECTO_BUENO_USAR_EL_12" product="PHPMaker" version="12.0" datetime="2017/04/16 23:25:03" languagefolder="phplang" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0">
+<project id="{524C14CD-A0E3-4083-AF86-06203077AB82}" file="C:\Users\User\Documents\PHPMaker\Projects\PROYECTO_BUENO_USAR_EL_12.pmp" name="PROYECTO_BUENO_USAR_EL_12" product="PHPMaker" version="12.0" datetime="2017/04/16 23:52:01" languagefolder="phplang" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0">
 <table id="tempe" name="tempe" caption="tempe" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
 <table id="view1" name="view1" caption="Historico Capturas" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
 <table id="_kepa_php" name="_kepa.php" caption="Estado Actual" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
@@ -8,5 +8,6 @@
 <table id="grafico_php" name="grafico.php" caption="Grafica diaria" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
 <table id="parametros" name="parametros" caption="Mantenimiento Params" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
 <table id="ip_php" name="ip.php" caption="Ip External actual" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
-<table id="usuarios" name="usuarios" caption="usuarios" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
+<table id="usuarios" name="usuarios" caption="Mantenimiento Usuarios" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
+<table id="view2" name="view2" caption="Mantenimiento Usuarios" userlevel="-2,&quot;Anonymous&quot;,0;0,&quot;Default&quot;,0" priv="1"/>
 </project></configuration>

@@ -7,6 +7,7 @@ $usuarios = NULL;
 // Table class for usuarios
 //
 class cusuarios extends cTable {
+	var $id;
 	var $usuario;
 	var $passwd;
 
@@ -40,12 +41,17 @@ class cusuarios extends cTable {
 		$this->UserIDAllowSecurity = 0; // User ID Allow
 		$this->BasicSearch = new cBasicSearch($this->TableVar);
 
+		// id
+		$this->id = new cField('usuarios', 'usuarios', 'x_id', 'id', '`id`', '`id`', 20, -1, FALSE, '`id`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'NO');
+		$this->id->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
+		$this->fields['id'] = &$this->id;
+
 		// usuario
 		$this->usuario = new cField('usuarios', 'usuarios', 'x_usuario', 'usuario', '`usuario`', '`usuario`', 200, -1, FALSE, '`usuario`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
 		$this->fields['usuario'] = &$this->usuario;
 
 		// passwd
-		$this->passwd = new cField('usuarios', 'usuarios', 'x_passwd', 'passwd', '`passwd`', '`passwd`', 200, -1, FALSE, '`passwd`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->passwd = new cField('usuarios', 'usuarios', 'x_passwd', 'passwd', '`passwd`', '`passwd`', 200, -1, FALSE, '`passwd`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'PASSWORD');
 		$this->fields['passwd'] = &$this->passwd;
 	}
 
@@ -339,6 +345,8 @@ class cusuarios extends cTable {
 		if (is_array($where))
 			$where = $this->ArrayToFilter($where);
 		if ($rs) {
+			if (array_key_exists('id', $rs))
+				ew_AddFilter($where, ew_QuotedName('id', $this->DBID) . '=' . ew_QuotedValue($rs['id'], $this->id->FldDataType, $this->DBID));
 		}
 		$filter = ($curfilter) ? $this->CurrentFilter : "";
 		ew_AddFilter($filter, $where);
@@ -357,12 +365,15 @@ class cusuarios extends cTable {
 
 	// Key filter WHERE clause
 	function SqlKeyFilter() {
-		return "";
+		return "`id` = @id@";
 	}
 
 	// Key filter
 	function KeyFilter() {
 		$sKeyFilter = $this->SqlKeyFilter();
+		if (!is_numeric($this->id->CurrentValue))
+			$sKeyFilter = "0=1"; // Invalid key
+		$sKeyFilter = str_replace("@id@", ew_AdjustSql($this->id->CurrentValue, $this->DBID), $sKeyFilter); // Replace key value
 		return $sKeyFilter;
 	}
 
@@ -443,6 +454,7 @@ class cusuarios extends cTable {
 
 	function KeyToJson() {
 		$json = "";
+		$json .= "id:" . ew_VarToJson($this->id->CurrentValue, "number", "'");
 		return "{" . $json . "}";
 	}
 
@@ -450,6 +462,11 @@ class cusuarios extends cTable {
 	function KeyUrl($url, $parm = "") {
 		$sUrl = $url . "?";
 		if ($parm <> "") $sUrl .= $parm . "&";
+		if (!is_null($this->id->CurrentValue)) {
+			$sUrl .= "id=" . urlencode($this->id->CurrentValue);
+		} else {
+			return "javascript:ew_Alert(ewLanguage.Phrase('InvalidRecord'));";
+		}
 		return $sUrl;
 	}
 
@@ -479,6 +496,7 @@ class cusuarios extends cTable {
 			$cnt = count($arKeys);
 		} elseif (!empty($_GET) || !empty($_POST)) {
 			$isPost = ew_IsHttpPost();
+			$arKeys[] = $isPost ? ew_StripSlashes(@$_POST["id"]) : ew_StripSlashes(@$_GET["id"]); // id
 
 			//return $arKeys; // Do not return yet, so the values will also be checked by the following code
 		}
@@ -486,6 +504,8 @@ class cusuarios extends cTable {
 		// Check keys
 		$ar = array();
 		foreach ($arKeys as $key) {
+			if (!is_numeric($key))
+				continue;
 			$ar[] = $key;
 		}
 		return $ar;
@@ -497,6 +517,7 @@ class cusuarios extends cTable {
 		$sKeyFilter = "";
 		foreach ($arKeys as $key) {
 			if ($sKeyFilter <> "") $sKeyFilter .= " OR ";
+			$this->id->CurrentValue = $key;
 			$sKeyFilter .= "(" . $this->KeyFilter() . ")";
 		}
 		return $sKeyFilter;
@@ -517,6 +538,7 @@ class cusuarios extends cTable {
 
 	// Load row values from recordset
 	function LoadListRowValues(&$rs) {
+		$this->id->setDbValue($rs->fields('id'));
 		$this->usuario->setDbValue($rs->fields('usuario'));
 		$this->passwd->setDbValue($rs->fields('passwd'));
 	}
@@ -529,16 +551,26 @@ class cusuarios extends cTable {
 		$this->Row_Rendering();
 
    // Common render codes
+		// id
 		// usuario
 		// passwd
-		// usuario
+		// id
 
+		$this->id->ViewValue = $this->id->CurrentValue;
+		$this->id->ViewCustomAttributes = "";
+
+		// usuario
 		$this->usuario->ViewValue = $this->usuario->CurrentValue;
 		$this->usuario->ViewCustomAttributes = "";
 
 		// passwd
-		$this->passwd->ViewValue = $this->passwd->CurrentValue;
+		$this->passwd->ViewValue = $Language->Phrase("PasswordMask");
 		$this->passwd->ViewCustomAttributes = "";
+
+		// id
+		$this->id->LinkCustomAttributes = "";
+		$this->id->HrefValue = "";
+		$this->id->TooltipValue = "";
 
 		// usuario
 		$this->usuario->LinkCustomAttributes = "";
@@ -560,6 +592,12 @@ class cusuarios extends cTable {
 
 		// Call Row Rendering event
 		$this->Row_Rendering();
+
+		// id
+		$this->id->EditAttrs["class"] = "form-control";
+		$this->id->EditCustomAttributes = "";
+		$this->id->EditValue = $this->id->CurrentValue;
+		$this->id->ViewCustomAttributes = "";
 
 		// usuario
 		$this->usuario->EditAttrs["class"] = "form-control";
@@ -600,9 +638,11 @@ class cusuarios extends cTable {
 			if ($Doc->Horizontal) { // Horizontal format, write header
 				$Doc->BeginExportRow();
 				if ($ExportPageType == "view") {
+					if ($this->id->Exportable) $Doc->ExportCaption($this->id);
 					if ($this->usuario->Exportable) $Doc->ExportCaption($this->usuario);
 					if ($this->passwd->Exportable) $Doc->ExportCaption($this->passwd);
 				} else {
+					if ($this->id->Exportable) $Doc->ExportCaption($this->id);
 					if ($this->usuario->Exportable) $Doc->ExportCaption($this->usuario);
 					if ($this->passwd->Exportable) $Doc->ExportCaption($this->passwd);
 				}
@@ -636,9 +676,11 @@ class cusuarios extends cTable {
 				if (!$Doc->ExportCustom) {
 					$Doc->BeginExportRow($RowCnt); // Allow CSS styles if enabled
 					if ($ExportPageType == "view") {
+						if ($this->id->Exportable) $Doc->ExportField($this->id);
 						if ($this->usuario->Exportable) $Doc->ExportField($this->usuario);
 						if ($this->passwd->Exportable) $Doc->ExportField($this->passwd);
 					} else {
+						if ($this->id->Exportable) $Doc->ExportField($this->id);
 						if ($this->usuario->Exportable) $Doc->ExportField($this->usuario);
 						if ($this->passwd->Exportable) $Doc->ExportField($this->passwd);
 					}

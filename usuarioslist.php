@@ -344,6 +344,9 @@ class cusuarios_list extends cusuarios {
 		$Security->LoadCurrentUserLevel($this->ProjectID . $this->TableName);
 		if ($Security->IsLoggedIn()) $Security->TablePermission_Loaded();
 		if (!$Security->IsLoggedIn()) $this->Page_Terminate(ew_GetUrl("login.php"));
+
+		// Create form object
+		$objForm = new cFormObj();
 		$this->CurrentAction = (@$_GET["a"] <> "") ? $_GET["a"] : @$_POST["a_list"]; // Set up current action
 
 		// Get grid add count
@@ -353,6 +356,7 @@ class cusuarios_list extends cusuarios {
 
 		// Set up list options
 		$this->SetupListOptions();
+		$this->id->Visible = !$this->IsAdd() && !$this->IsCopy() && !$this->IsGridAdd();
 
 		// Global Page Loading event (in userfn*.php)
 		Page_Loading();
@@ -512,6 +516,71 @@ class cusuarios_list extends cusuarios {
 			if ($this->Export == "")
 				$this->SetupBreadcrumb();
 
+			// Check QueryString parameters
+			if (@$_GET["a"] <> "") {
+				$this->CurrentAction = $_GET["a"];
+
+				// Clear inline mode
+				if ($this->CurrentAction == "cancel")
+					$this->ClearInlineMode();
+
+				// Switch to grid edit mode
+				if ($this->CurrentAction == "gridedit")
+					$this->GridEditMode();
+
+				// Switch to inline edit mode
+				if ($this->CurrentAction == "edit")
+					$this->InlineEditMode();
+
+				// Switch to inline add mode
+				if ($this->CurrentAction == "add" || $this->CurrentAction == "copy")
+					$this->InlineAddMode();
+
+				// Switch to grid add mode
+				if ($this->CurrentAction == "gridadd")
+					$this->GridAddMode();
+			} else {
+				if (@$_POST["a_list"] <> "") {
+					$this->CurrentAction = $_POST["a_list"]; // Get action
+
+					// Grid Update
+					if (($this->CurrentAction == "gridupdate" || $this->CurrentAction == "gridoverwrite") && @$_SESSION[EW_SESSION_INLINE_MODE] == "gridedit") {
+						if ($this->ValidateGridForm()) {
+							$bGridUpdate = $this->GridUpdate();
+						} else {
+							$bGridUpdate = FALSE;
+							$this->setFailureMessage($gsFormError);
+						}
+						if (!$bGridUpdate) {
+							$this->EventCancelled = TRUE;
+							$this->CurrentAction = "gridedit"; // Stay in Grid Edit mode
+						}
+					}
+
+					// Inline Update
+					if (($this->CurrentAction == "update" || $this->CurrentAction == "overwrite") && @$_SESSION[EW_SESSION_INLINE_MODE] == "edit")
+						$this->InlineUpdate();
+
+					// Insert Inline
+					if ($this->CurrentAction == "insert" && @$_SESSION[EW_SESSION_INLINE_MODE] == "add")
+						$this->InlineInsert();
+
+					// Grid Insert
+					if ($this->CurrentAction == "gridinsert" && @$_SESSION[EW_SESSION_INLINE_MODE] == "gridadd") {
+						if ($this->ValidateGridForm()) {
+							$bGridInsert = $this->GridInsert();
+						} else {
+							$bGridInsert = FALSE;
+							$this->setFailureMessage($gsFormError);
+						}
+						if (!$bGridInsert) {
+							$this->EventCancelled = TRUE;
+							$this->CurrentAction = "gridadd"; // Stay in Grid Add mode
+						}
+					}
+				}
+			}
+
 			// Hide list options
 			if ($this->Export <> "") {
 				$this->ListOptions->HideAllOptions(array("sequence"));
@@ -533,6 +602,14 @@ class cusuarios_list extends cusuarios {
 			if ($this->Export <> "") {
 				foreach ($this->OtherOptions as &$option)
 					$option->HideAllOptions();
+			}
+
+			// Show grid delete link for grid add / grid edit
+			if ($this->AllowAddDeleteRow) {
+				if ($this->CurrentAction == "gridadd" || $this->CurrentAction == "gridedit") {
+					$item = $this->ListOptions->GetItem("griddelete");
+					if ($item) $item->Visible = TRUE;
+				}
 			}
 
 			// Get default search criteria
@@ -620,6 +697,231 @@ class cusuarios_list extends cusuarios {
 		$this->SetupSearchOptions();
 	}
 
+	//  Exit inline mode
+	function ClearInlineMode() {
+		$this->setKey("id", ""); // Clear inline edit key
+		$this->LastAction = $this->CurrentAction; // Save last action
+		$this->CurrentAction = ""; // Clear action
+		$_SESSION[EW_SESSION_INLINE_MODE] = ""; // Clear inline mode
+	}
+
+	// Switch to Grid Add mode
+	function GridAddMode() {
+		$_SESSION[EW_SESSION_INLINE_MODE] = "gridadd"; // Enabled grid add
+	}
+
+	// Switch to Grid Edit mode
+	function GridEditMode() {
+		$_SESSION[EW_SESSION_INLINE_MODE] = "gridedit"; // Enable grid edit
+	}
+
+	// Switch to Inline Edit mode
+	function InlineEditMode() {
+		global $Security, $Language;
+		if (!$Security->CanEdit())
+			$this->Page_Terminate("login.php"); // Go to login page
+		$bInlineEdit = TRUE;
+		if (@$_GET["id"] <> "") {
+			$this->id->setQueryStringValue($_GET["id"]);
+		} else {
+			$bInlineEdit = FALSE;
+		}
+		if ($bInlineEdit) {
+			if ($this->LoadRow()) {
+				$this->setKey("id", $this->id->CurrentValue); // Set up inline edit key
+				$_SESSION[EW_SESSION_INLINE_MODE] = "edit"; // Enable inline edit
+			}
+		}
+	}
+
+	// Perform update to Inline Edit record
+	function InlineUpdate() {
+		global $Language, $objForm, $gsFormError;
+		$objForm->Index = 1; 
+		$this->LoadFormValues(); // Get form values
+
+		// Validate form
+		$bInlineUpdate = TRUE;
+		if (!$this->ValidateForm()) {	
+			$bInlineUpdate = FALSE; // Form error, reset action
+			$this->setFailureMessage($gsFormError);
+		} else {
+			$bInlineUpdate = FALSE;
+			$rowkey = strval($objForm->GetValue($this->FormKeyName));
+			if ($this->SetupKeyValues($rowkey)) { // Set up key values
+				if ($this->CheckInlineEditKey()) { // Check key
+					$this->SendEmail = TRUE; // Send email on update success
+					$bInlineUpdate = $this->EditRow(); // Update record
+				} else {
+					$bInlineUpdate = FALSE;
+				}
+			}
+		}
+		if ($bInlineUpdate) { // Update success
+			if ($this->getSuccessMessage() == "")
+				$this->setSuccessMessage($Language->Phrase("UpdateSuccess")); // Set up success message
+			$this->ClearInlineMode(); // Clear inline edit mode
+		} else {
+			if ($this->getFailureMessage() == "")
+				$this->setFailureMessage($Language->Phrase("UpdateFailed")); // Set update failed message
+			$this->EventCancelled = TRUE; // Cancel event
+			$this->CurrentAction = "edit"; // Stay in edit mode
+		}
+	}
+
+	// Check Inline Edit key
+	function CheckInlineEditKey() {
+
+		//CheckInlineEditKey = True
+		if (strval($this->getKey("id")) <> strval($this->id->CurrentValue))
+			return FALSE;
+		return TRUE;
+	}
+
+	// Switch to Inline Add mode
+	function InlineAddMode() {
+		global $Security, $Language;
+		if (!$Security->CanAdd())
+			$this->Page_Terminate("login.php"); // Return to login page
+		if ($this->CurrentAction == "copy") {
+			if (@$_GET["id"] <> "") {
+				$this->id->setQueryStringValue($_GET["id"]);
+				$this->setKey("id", $this->id->CurrentValue); // Set up key
+			} else {
+				$this->setKey("id", ""); // Clear key
+				$this->CurrentAction = "add";
+			}
+		}
+		$_SESSION[EW_SESSION_INLINE_MODE] = "add"; // Enable inline add
+	}
+
+	// Perform update to Inline Add/Copy record
+	function InlineInsert() {
+		global $Language, $objForm, $gsFormError;
+		$this->LoadOldRecord(); // Load old recordset
+		$objForm->Index = 0;
+		$this->LoadFormValues(); // Get form values
+
+		// Validate form
+		if (!$this->ValidateForm()) {
+			$this->setFailureMessage($gsFormError); // Set validation error message
+			$this->EventCancelled = TRUE; // Set event cancelled
+			$this->CurrentAction = "add"; // Stay in add mode
+			return;
+		}
+		$this->SendEmail = TRUE; // Send email on add success
+		if ($this->AddRow($this->OldRecordset)) { // Add record
+			if ($this->getSuccessMessage() == "")
+				$this->setSuccessMessage($Language->Phrase("AddSuccess")); // Set up add success message
+			$this->ClearInlineMode(); // Clear inline add mode
+		} else { // Add failed
+			$this->EventCancelled = TRUE; // Set event cancelled
+			$this->CurrentAction = "add"; // Stay in add mode
+		}
+	}
+
+	// Perform update to grid
+	function GridUpdate() {
+		global $Language, $objForm, $gsFormError;
+		$bGridUpdate = TRUE;
+
+		// Get old recordset
+		$this->CurrentFilter = $this->BuildKeyFilter();
+		if ($this->CurrentFilter == "")
+			$this->CurrentFilter = "0=1";
+		$sSql = $this->SQL();
+		$conn = &$this->Connection();
+		if ($rs = $conn->Execute($sSql)) {
+			$rsold = $rs->GetRows();
+			$rs->Close();
+		}
+
+		// Call Grid Updating event
+		if (!$this->Grid_Updating($rsold)) {
+			if ($this->getFailureMessage() == "")
+				$this->setFailureMessage($Language->Phrase("GridEditCancelled")); // Set grid edit cancelled message
+			return FALSE;
+		}
+
+		// Begin transaction
+		$conn->BeginTrans();
+		$sKey = "";
+
+		// Update row index and get row key
+		$objForm->Index = -1;
+		$rowcnt = strval($objForm->GetValue($this->FormKeyCountName));
+		if ($rowcnt == "" || !is_numeric($rowcnt))
+			$rowcnt = 0;
+
+		// Update all rows based on key
+		for ($rowindex = 1; $rowindex <= $rowcnt; $rowindex++) {
+			$objForm->Index = $rowindex;
+			$rowkey = strval($objForm->GetValue($this->FormKeyName));
+			$rowaction = strval($objForm->GetValue($this->FormActionName));
+
+			// Load all values and keys
+			if ($rowaction <> "insertdelete") { // Skip insert then deleted rows
+				$this->LoadFormValues(); // Get form values
+				if ($rowaction == "" || $rowaction == "edit" || $rowaction == "delete") {
+					$bGridUpdate = $this->SetupKeyValues($rowkey); // Set up key values
+				} else {
+					$bGridUpdate = TRUE;
+				}
+
+				// Skip empty row
+				if ($rowaction == "insert" && $this->EmptyRow()) {
+
+					// No action required
+				// Validate form and insert/update/delete record
+
+				} elseif ($bGridUpdate) {
+					if ($rowaction == "delete") {
+						$this->CurrentFilter = $this->KeyFilter();
+						$bGridUpdate = $this->DeleteRows(); // Delete this row
+					} else if (!$this->ValidateForm()) {
+						$bGridUpdate = FALSE; // Form error, reset action
+						$this->setFailureMessage($gsFormError);
+					} else {
+						if ($rowaction == "insert") {
+							$bGridUpdate = $this->AddRow(); // Insert this row
+						} else {
+							if ($rowkey <> "") {
+								$this->SendEmail = FALSE; // Do not send email on update success
+								$bGridUpdate = $this->EditRow(); // Update this row
+							}
+						} // End update
+					}
+				}
+				if ($bGridUpdate) {
+					if ($sKey <> "") $sKey .= ", ";
+					$sKey .= $rowkey;
+				} else {
+					break;
+				}
+			}
+		}
+		if ($bGridUpdate) {
+			$conn->CommitTrans(); // Commit transaction
+
+			// Get new recordset
+			if ($rs = $conn->Execute($sSql)) {
+				$rsnew = $rs->GetRows();
+				$rs->Close();
+			}
+
+			// Call Grid_Updated event
+			$this->Grid_Updated($rsold, $rsnew);
+			if ($this->getSuccessMessage() == "")
+				$this->setSuccessMessage($Language->Phrase("UpdateSuccess")); // Set up update success message
+			$this->ClearInlineMode(); // Clear inline edit mode
+		} else {
+			$conn->RollbackTrans(); // Rollback transaction
+			if ($this->getFailureMessage() == "")
+				$this->setFailureMessage($Language->Phrase("UpdateFailed")); // Set update failed message
+		}
+		return $bGridUpdate;
+	}
+
 	// Build filter for all keys
 	function BuildKeyFilter() {
 		global $objForm;
@@ -650,9 +952,181 @@ class cusuarios_list extends cusuarios {
 	// Set up key values
 	function SetupKeyValues($key) {
 		$arrKeyFlds = explode($GLOBALS["EW_COMPOSITE_KEY_SEPARATOR"], $key);
-		if (count($arrKeyFlds) >= 0) {
+		if (count($arrKeyFlds) >= 1) {
+			$this->id->setFormValue($arrKeyFlds[0]);
+			if (!is_numeric($this->id->FormValue))
+				return FALSE;
 		}
 		return TRUE;
+	}
+
+	// Perform Grid Add
+	function GridInsert() {
+		global $Language, $objForm, $gsFormError;
+		$rowindex = 1;
+		$bGridInsert = FALSE;
+		$conn = &$this->Connection();
+
+		// Call Grid Inserting event
+		if (!$this->Grid_Inserting()) {
+			if ($this->getFailureMessage() == "") {
+				$this->setFailureMessage($Language->Phrase("GridAddCancelled")); // Set grid add cancelled message
+			}
+			return FALSE;
+		}
+
+		// Begin transaction
+		$conn->BeginTrans();
+
+		// Init key filter
+		$sWrkFilter = "";
+		$addcnt = 0;
+		$sKey = "";
+
+		// Get row count
+		$objForm->Index = -1;
+		$rowcnt = strval($objForm->GetValue($this->FormKeyCountName));
+		if ($rowcnt == "" || !is_numeric($rowcnt))
+			$rowcnt = 0;
+
+		// Insert all rows
+		for ($rowindex = 1; $rowindex <= $rowcnt; $rowindex++) {
+
+			// Load current row values
+			$objForm->Index = $rowindex;
+			$rowaction = strval($objForm->GetValue($this->FormActionName));
+			if ($rowaction <> "" && $rowaction <> "insert")
+				continue; // Skip
+			$this->LoadFormValues(); // Get form values
+			if (!$this->EmptyRow()) {
+				$addcnt++;
+				$this->SendEmail = FALSE; // Do not send email on insert success
+
+				// Validate form
+				if (!$this->ValidateForm()) {
+					$bGridInsert = FALSE; // Form error, reset action
+					$this->setFailureMessage($gsFormError);
+				} else {
+					$bGridInsert = $this->AddRow($this->OldRecordset); // Insert this row
+				}
+				if ($bGridInsert) {
+					if ($sKey <> "") $sKey .= $GLOBALS["EW_COMPOSITE_KEY_SEPARATOR"];
+					$sKey .= $this->id->CurrentValue;
+
+					// Add filter for this record
+					$sFilter = $this->KeyFilter();
+					if ($sWrkFilter <> "") $sWrkFilter .= " OR ";
+					$sWrkFilter .= $sFilter;
+				} else {
+					break;
+				}
+			}
+		}
+		if ($addcnt == 0) { // No record inserted
+			$this->setFailureMessage($Language->Phrase("NoAddRecord"));
+			$bGridInsert = FALSE;
+		}
+		if ($bGridInsert) {
+			$conn->CommitTrans(); // Commit transaction
+
+			// Get new recordset
+			$this->CurrentFilter = $sWrkFilter;
+			$sSql = $this->SQL();
+			if ($rs = $conn->Execute($sSql)) {
+				$rsnew = $rs->GetRows();
+				$rs->Close();
+			}
+
+			// Call Grid_Inserted event
+			$this->Grid_Inserted($rsnew);
+			if ($this->getSuccessMessage() == "")
+				$this->setSuccessMessage($Language->Phrase("InsertSuccess")); // Set up insert success message
+			$this->ClearInlineMode(); // Clear grid add mode
+		} else {
+			$conn->RollbackTrans(); // Rollback transaction
+			if ($this->getFailureMessage() == "") {
+				$this->setFailureMessage($Language->Phrase("InsertFailed")); // Set insert failed message
+			}
+		}
+		return $bGridInsert;
+	}
+
+	// Check if empty row
+	function EmptyRow() {
+		global $objForm;
+		if ($objForm->HasValue("x_usuario") && $objForm->HasValue("o_usuario") && $this->usuario->CurrentValue <> $this->usuario->OldValue)
+			return FALSE;
+		if ($objForm->HasValue("x_passwd") && $objForm->HasValue("o_passwd") && $this->passwd->CurrentValue <> $this->passwd->OldValue)
+			return FALSE;
+		return TRUE;
+	}
+
+	// Validate grid form
+	function ValidateGridForm() {
+		global $objForm;
+
+		// Get row count
+		$objForm->Index = -1;
+		$rowcnt = strval($objForm->GetValue($this->FormKeyCountName));
+		if ($rowcnt == "" || !is_numeric($rowcnt))
+			$rowcnt = 0;
+
+		// Validate all records
+		for ($rowindex = 1; $rowindex <= $rowcnt; $rowindex++) {
+
+			// Load current row values
+			$objForm->Index = $rowindex;
+			$rowaction = strval($objForm->GetValue($this->FormActionName));
+			if ($rowaction <> "delete" && $rowaction <> "insertdelete") {
+				$this->LoadFormValues(); // Get form values
+				if ($rowaction == "insert" && $this->EmptyRow()) {
+
+					// Ignore
+				} else if (!$this->ValidateForm()) {
+					return FALSE;
+				}
+			}
+		}
+		return TRUE;
+	}
+
+	// Get all form values of the grid
+	function GetGridFormValues() {
+		global $objForm;
+
+		// Get row count
+		$objForm->Index = -1;
+		$rowcnt = strval($objForm->GetValue($this->FormKeyCountName));
+		if ($rowcnt == "" || !is_numeric($rowcnt))
+			$rowcnt = 0;
+		$rows = array();
+
+		// Loop through all records
+		for ($rowindex = 1; $rowindex <= $rowcnt; $rowindex++) {
+
+			// Load current row values
+			$objForm->Index = $rowindex;
+			$rowaction = strval($objForm->GetValue($this->FormActionName));
+			if ($rowaction <> "delete" && $rowaction <> "insertdelete") {
+				$this->LoadFormValues(); // Get form values
+				if ($rowaction == "insert" && $this->EmptyRow()) {
+
+					// Ignore
+				} else {
+					$rows[] = $this->GetFieldValues("FormValue"); // Return row as array
+				}
+			}
+		}
+		return $rows; // Return as array of array
+	}
+
+	// Restore form values for current row
+	function RestoreCurrentRowFormValues($idx) {
+		global $objForm;
+
+		// Get row based on current index
+		$objForm->Index = $idx;
+		$this->LoadFormValues(); // Load form values
 	}
 
 	// Get list of filters
@@ -660,6 +1134,7 @@ class cusuarios_list extends cusuarios {
 
 		// Initialize
 		$sFilterList = "";
+		$sFilterList = ew_Concat($sFilterList, $this->id->AdvancedSearch->ToJSON(), ","); // Field id
 		$sFilterList = ew_Concat($sFilterList, $this->usuario->AdvancedSearch->ToJSON(), ","); // Field usuario
 		$sFilterList = ew_Concat($sFilterList, $this->passwd->AdvancedSearch->ToJSON(), ","); // Field passwd
 		if ($this->BasicSearch->Keyword <> "") {
@@ -679,6 +1154,14 @@ class cusuarios_list extends cusuarios {
 			return FALSE;
 		$filter = json_decode(ew_StripSlashes(@$_POST["filter"]), TRUE);
 		$this->Command = "search";
+
+		// Field id
+		$this->id->AdvancedSearch->SearchValue = @$filter["x_id"];
+		$this->id->AdvancedSearch->SearchOperator = @$filter["z_id"];
+		$this->id->AdvancedSearch->SearchCondition = @$filter["v_id"];
+		$this->id->AdvancedSearch->SearchValue2 = @$filter["y_id"];
+		$this->id->AdvancedSearch->SearchOperator2 = @$filter["w_id"];
+		$this->id->AdvancedSearch->Save();
 
 		// Field usuario
 		$this->usuario->AdvancedSearch->SearchValue = @$filter["x_usuario"];
@@ -871,6 +1354,7 @@ class cusuarios_list extends cusuarios {
 		if (@$_GET["order"] <> "") {
 			$this->CurrentOrder = ew_StripSlashes(@$_GET["order"]);
 			$this->CurrentOrderType = @$_GET["ordertype"];
+			$this->UpdateSort($this->id, $bCtrl); // id
 			$this->UpdateSort($this->usuario, $bCtrl); // usuario
 			$this->UpdateSort($this->passwd, $bCtrl); // passwd
 			$this->setStartRecordNumber(1); // Reset start position
@@ -905,6 +1389,7 @@ class cusuarios_list extends cusuarios {
 			if ($this->Command == "resetsort") {
 				$sOrderBy = "";
 				$this->setSessionOrderBy($sOrderBy);
+				$this->id->setSort("");
 				$this->usuario->setSort("");
 				$this->passwd->setSort("");
 			}
@@ -919,11 +1404,37 @@ class cusuarios_list extends cusuarios {
 	function SetupListOptions() {
 		global $Security, $Language;
 
+		// "griddelete"
+		if ($this->AllowAddDeleteRow) {
+			$item = &$this->ListOptions->Add("griddelete");
+			$item->CssStyle = "white-space: nowrap;";
+			$item->OnLeft = TRUE;
+			$item->Visible = FALSE; // Default hidden
+		}
+
 		// Add group option item
 		$item = &$this->ListOptions->Add($this->ListOptions->GroupOptionName);
 		$item->Body = "";
 		$item->OnLeft = TRUE;
 		$item->Visible = FALSE;
+
+		// "view"
+		$item = &$this->ListOptions->Add("view");
+		$item->CssStyle = "white-space: nowrap;";
+		$item->Visible = $Security->CanView();
+		$item->OnLeft = TRUE;
+
+		// "edit"
+		$item = &$this->ListOptions->Add("edit");
+		$item->CssStyle = "white-space: nowrap;";
+		$item->Visible = $Security->CanEdit();
+		$item->OnLeft = TRUE;
+
+		// "copy"
+		$item = &$this->ListOptions->Add("copy");
+		$item->CssStyle = "white-space: nowrap;";
+		$item->Visible = $Security->CanAdd();
+		$item->OnLeft = TRUE;
 
 		// List actions
 		$item = &$this->ListOptions->Add("listactions");
@@ -963,6 +1474,87 @@ class cusuarios_list extends cusuarios {
 		global $Security, $Language, $objForm;
 		$this->ListOptions->LoadDefault();
 
+		// Set up row action and key
+		if (is_numeric($this->RowIndex) && $this->CurrentMode <> "view") {
+			$objForm->Index = $this->RowIndex;
+			$ActionName = str_replace("k_", "k" . $this->RowIndex . "_", $this->FormActionName);
+			$OldKeyName = str_replace("k_", "k" . $this->RowIndex . "_", $this->FormOldKeyName);
+			$KeyName = str_replace("k_", "k" . $this->RowIndex . "_", $this->FormKeyName);
+			$BlankRowName = str_replace("k_", "k" . $this->RowIndex . "_", $this->FormBlankRowName);
+			if ($this->RowAction <> "")
+				$this->MultiSelectKey .= "<input type=\"hidden\" name=\"" . $ActionName . "\" id=\"" . $ActionName . "\" value=\"" . $this->RowAction . "\">";
+			if ($this->RowAction == "delete") {
+				$rowkey = $objForm->GetValue($this->FormKeyName);
+				$this->SetupKeyValues($rowkey);
+			}
+			if ($this->RowAction == "insert" && $this->CurrentAction == "F" && $this->EmptyRow())
+				$this->MultiSelectKey .= "<input type=\"hidden\" name=\"" . $BlankRowName . "\" id=\"" . $BlankRowName . "\" value=\"1\">";
+		}
+
+		// "delete"
+		if ($this->AllowAddDeleteRow) {
+			if ($this->CurrentAction == "gridadd" || $this->CurrentAction == "gridedit") {
+				$option = &$this->ListOptions;
+				$option->UseButtonGroup = TRUE; // Use button group for grid delete button
+				$option->UseImageAndText = TRUE; // Use image and text for grid delete button
+				$oListOpt = &$option->Items["griddelete"];
+				if (is_numeric($this->RowIndex) && ($this->RowAction == "" || $this->RowAction == "edit")) { // Do not allow delete existing record
+					$oListOpt->Body = "&nbsp;";
+				} else {
+					$oListOpt->Body = "<a class=\"ewGridLink ewGridDelete\" title=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" onclick=\"return ew_DeleteGridRow(this, " . $this->RowIndex . ");\">" . $Language->Phrase("DeleteLink") . "</a>";
+				}
+			}
+		}
+
+		// "copy"
+		$oListOpt = &$this->ListOptions->Items["copy"];
+		if (($this->CurrentAction == "add" || $this->CurrentAction == "copy") && $this->RowType == EW_ROWTYPE_ADD) { // Inline Add/Copy
+			$this->ListOptions->CustomItem = "copy"; // Show copy column only
+			$cancelurl = $this->AddMasterUrl($this->PageUrl() . "a=cancel");
+			$oListOpt->Body = "<div" . (($oListOpt->OnLeft) ? " style=\"text-align: right\"" : "") . ">" .
+				"<a class=\"ewGridLink ewInlineInsert\" title=\"" . ew_HtmlTitle($Language->Phrase("InsertLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InsertLink")) . "\" href=\"\" onclick=\"return ewForms(this).Submit('" . $this->AddMasterUrl($this->PageName()) . "');\">" . $Language->Phrase("InsertLink") . "</a>&nbsp;" .
+				"<a class=\"ewGridLink ewInlineCancel\" title=\"" . ew_HtmlTitle($Language->Phrase("CancelLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("CancelLink")) . "\" href=\"" . $cancelurl . "\">" . $Language->Phrase("CancelLink") . "</a>" .
+				"<input type=\"hidden\" name=\"a_list\" id=\"a_list\" value=\"insert\"></div>";
+			return;
+		}
+
+		// "edit"
+		$oListOpt = &$this->ListOptions->Items["edit"];
+		if ($this->CurrentAction == "edit" && $this->RowType == EW_ROWTYPE_EDIT) { // Inline-Edit
+			$this->ListOptions->CustomItem = "edit"; // Show edit column only
+			$cancelurl = $this->AddMasterUrl($this->PageUrl() . "a=cancel");
+				$oListOpt->Body = "<div" . (($oListOpt->OnLeft) ? " style=\"text-align: right\"" : "") . ">" .
+					"<a class=\"ewGridLink ewInlineUpdate\" title=\"" . ew_HtmlTitle($Language->Phrase("UpdateLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("UpdateLink")) . "\" href=\"\" onclick=\"return ewForms(this).Submit('" . ew_GetHashUrl($this->AddMasterUrl($this->PageName()), $this->PageObjName . "_row_" . $this->RowCnt) . "');\">" . $Language->Phrase("UpdateLink") . "</a>&nbsp;" .
+					"<a class=\"ewGridLink ewInlineCancel\" title=\"" . ew_HtmlTitle($Language->Phrase("CancelLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("CancelLink")) . "\" href=\"" . $cancelurl . "\">" . $Language->Phrase("CancelLink") . "</a>" .
+					"<input type=\"hidden\" name=\"a_list\" id=\"a_list\" value=\"update\"></div>";
+			$oListOpt->Body .= "<input type=\"hidden\" name=\"k" . $this->RowIndex . "_key\" id=\"k" . $this->RowIndex . "_key\" value=\"" . ew_HtmlEncode($this->id->CurrentValue) . "\">";
+			return;
+		}
+
+		// "view"
+		$oListOpt = &$this->ListOptions->Items["view"];
+		if ($Security->CanView())
+			$oListOpt->Body = "<a class=\"ewRowLink ewView\" title=\"" . ew_HtmlTitle($Language->Phrase("ViewLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("ViewLink")) . "\" href=\"" . ew_HtmlEncode($this->ViewUrl) . "\">" . $Language->Phrase("ViewLink") . "</a>";
+		else
+			$oListOpt->Body = "";
+
+		// "edit"
+		$oListOpt = &$this->ListOptions->Items["edit"];
+		if ($Security->CanEdit()) {
+			$oListOpt->Body .= "<a class=\"ewRowLink ewInlineEdit\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineEditLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineEditLink")) . "\" href=\"" . ew_HtmlEncode(ew_GetHashUrl($this->InlineEditUrl, $this->PageObjName . "_row_" . $this->RowCnt)) . "\">" . $Language->Phrase("InlineEditLink") . "</a>";
+		} else {
+			$oListOpt->Body = "";
+		}
+
+		// "copy"
+		$oListOpt = &$this->ListOptions->Items["copy"];
+		if ($Security->CanAdd()) {
+			$oListOpt->Body = "<a class=\"ewRowLink ewCopy\" title=\"" . ew_HtmlTitle($Language->Phrase("CopyLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("CopyLink")) . "\" href=\"" . ew_HtmlEncode($this->CopyUrl) . "\">" . $Language->Phrase("CopyLink") . "</a>";
+			$oListOpt->Body .= "<a class=\"ewRowLink ewInlineCopy\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineCopyLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineCopyLink")) . "\" href=\"" . ew_HtmlEncode($this->InlineCopyUrl) . "\">" . $Language->Phrase("InlineCopyLink") . "</a>";
+		} else {
+			$oListOpt->Body = "";
+		}
+
 		// Set up list action buttons
 		$oListOpt = &$this->ListOptions->GetItem("listactions");
 		if ($oListOpt) {
@@ -994,6 +1586,10 @@ class cusuarios_list extends cusuarios {
 
 		// "checkbox"
 		$oListOpt = &$this->ListOptions->Items["checkbox"];
+		$oListOpt->Body = "<input type=\"checkbox\" name=\"key_m[]\" value=\"" . ew_HtmlEncode($this->id->CurrentValue) . "\" onclick='ew_ClickMultiCheckbox(event);'>";
+		if ($this->CurrentAction == "gridedit" && is_numeric($this->RowIndex)) {
+			$this->MultiSelectKey .= "<input type=\"hidden\" name=\"" . $KeyName . "\" id=\"" . $KeyName . "\" value=\"" . $this->id->CurrentValue . "\">";
+		}
 		$this->RenderListOptionsExt();
 
 		// Call ListOptions_Rendered event
@@ -1004,6 +1600,26 @@ class cusuarios_list extends cusuarios {
 	function SetupOtherOptions() {
 		global $Language, $Security;
 		$options = &$this->OtherOptions;
+		$option = $options["addedit"];
+
+		// Add
+		$item = &$option->Add("add");
+		$item->Body = "<a class=\"ewAddEdit ewAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("AddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddLink")) . "\" href=\"" . ew_HtmlEncode($this->AddUrl) . "\">" . $Language->Phrase("AddLink") . "</a>";
+		$item->Visible = ($this->AddUrl <> "" && $Security->CanAdd());
+
+		// Inline Add
+		$item = &$option->Add("inlineadd");
+		$item->Body = "<a class=\"ewAddEdit ewInlineAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineAddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineAddLink")) . "\" href=\"" . ew_HtmlEncode($this->InlineAddUrl) . "\">" .$Language->Phrase("InlineAddLink") . "</a>";
+		$item->Visible = ($this->InlineAddUrl <> "" && $Security->CanAdd());
+		$item = &$option->Add("gridadd");
+		$item->Body = "<a class=\"ewAddEdit ewGridAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("GridAddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridAddLink")) . "\" href=\"" . ew_HtmlEncode($this->GridAddUrl) . "\">" . $Language->Phrase("GridAddLink") . "</a>";
+		$item->Visible = ($this->GridAddUrl <> "" && $Security->CanAdd());
+
+		// Add grid edit
+		$option = $options["addedit"];
+		$item = &$option->Add("gridedit");
+		$item->Body = "<a class=\"ewAddEdit ewGridEdit\" title=\"" . ew_HtmlTitle($Language->Phrase("GridEditLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridEditLink")) . "\" href=\"" . ew_HtmlEncode($this->GridEditUrl) . "\">" . $Language->Phrase("GridEditLink") . "</a>";
+		$item->Visible = ($this->GridEditUrl <> "" && $Security->CanEdit());
 		$option = $options["action"];
 
 		// Set up options default
@@ -1041,6 +1657,7 @@ class cusuarios_list extends cusuarios {
 	function RenderOtherOptions() {
 		global $Language, $Security;
 		$options = &$this->OtherOptions;
+		if ($this->CurrentAction <> "gridadd" && $this->CurrentAction <> "gridedit") { // Not grid add/edit mode
 			$option = &$options["action"];
 
 			// Set up list action buttons
@@ -1062,6 +1679,56 @@ class cusuarios_list extends cusuarios {
 				$option = &$options["action"];
 				$option->HideAllOptions();
 			}
+		} else { // Grid add/edit mode
+
+			// Hide all options first
+			foreach ($options as &$option)
+				$option->HideAllOptions();
+			if ($this->CurrentAction == "gridadd") {
+				if ($this->AllowAddDeleteRow) {
+
+					// Add add blank row
+					$option = &$options["addedit"];
+					$option->UseDropDownButton = FALSE;
+					$option->UseImageAndText = TRUE;
+					$item = &$option->Add("addblankrow");
+					$item->Body = "<a class=\"ewAddEdit ewAddBlankRow\" title=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" href=\"javascript:void(0);\" onclick=\"ew_AddGridRow(this);\">" . $Language->Phrase("AddBlankRow") . "</a>";
+					$item->Visible = $Security->CanAdd();
+				}
+				$option = &$options["action"];
+				$option->UseDropDownButton = FALSE;
+				$option->UseImageAndText = TRUE;
+
+				// Add grid insert
+				$item = &$option->Add("gridinsert");
+				$item->Body = "<a class=\"ewAction ewGridInsert\" title=\"" . ew_HtmlTitle($Language->Phrase("GridInsertLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridInsertLink")) . "\" href=\"\" onclick=\"return ewForms(this).Submit('" . $this->AddMasterUrl($this->PageName()) . "');\">" . $Language->Phrase("GridInsertLink") . "</a>";
+
+				// Add grid cancel
+				$item = &$option->Add("gridcancel");
+				$cancelurl = $this->AddMasterUrl($this->PageUrl() . "a=cancel");
+				$item->Body = "<a class=\"ewAction ewGridCancel\" title=\"" . ew_HtmlTitle($Language->Phrase("GridCancelLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridCancelLink")) . "\" href=\"" . $cancelurl . "\">" . $Language->Phrase("GridCancelLink") . "</a>";
+			}
+			if ($this->CurrentAction == "gridedit") {
+				if ($this->AllowAddDeleteRow) {
+
+					// Add add blank row
+					$option = &$options["addedit"];
+					$option->UseDropDownButton = FALSE;
+					$option->UseImageAndText = TRUE;
+					$item = &$option->Add("addblankrow");
+					$item->Body = "<a class=\"ewAddEdit ewAddBlankRow\" title=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" href=\"javascript:void(0);\" onclick=\"ew_AddGridRow(this);\">" . $Language->Phrase("AddBlankRow") . "</a>";
+					$item->Visible = $Security->CanAdd();
+				}
+				$option = &$options["action"];
+				$option->UseDropDownButton = FALSE;
+				$option->UseImageAndText = TRUE;
+					$item = &$option->Add("gridsave");
+					$item->Body = "<a class=\"ewAction ewGridSave\" title=\"" . ew_HtmlTitle($Language->Phrase("GridSaveLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridSaveLink")) . "\" href=\"\" onclick=\"return ewForms(this).Submit('" . $this->AddMasterUrl($this->PageName()) . "');\">" . $Language->Phrase("GridSaveLink") . "</a>";
+					$item = &$option->Add("gridcancel");
+					$cancelurl = $this->AddMasterUrl($this->PageUrl() . "a=cancel");
+					$item->Body = "<a class=\"ewAction ewGridCancel\" title=\"" . ew_HtmlTitle($Language->Phrase("GridCancelLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridCancelLink")) . "\" href=\"" . $cancelurl . "\">" . $Language->Phrase("GridCancelLink") . "</a>";
+			}
+		}
 	}
 
 	// Process list action
@@ -1237,11 +1904,47 @@ class cusuarios_list extends cusuarios {
 		}
 	}
 
+	// Load default values
+	function LoadDefaultValues() {
+		$this->id->CurrentValue = NULL;
+		$this->id->OldValue = $this->id->CurrentValue;
+		$this->usuario->CurrentValue = NULL;
+		$this->usuario->OldValue = $this->usuario->CurrentValue;
+		$this->passwd->CurrentValue = NULL;
+		$this->passwd->OldValue = $this->passwd->CurrentValue;
+	}
+
 	// Load basic search values
 	function LoadBasicSearchValues() {
 		$this->BasicSearch->Keyword = @$_GET[EW_TABLE_BASIC_SEARCH];
 		if ($this->BasicSearch->Keyword <> "") $this->Command = "search";
 		$this->BasicSearch->Type = @$_GET[EW_TABLE_BASIC_SEARCH_TYPE];
+	}
+
+	// Load form values
+	function LoadFormValues() {
+
+		// Load from form
+		global $objForm;
+		if (!$this->id->FldIsDetailKey && $this->CurrentAction <> "gridadd" && $this->CurrentAction <> "add")
+			$this->id->setFormValue($objForm->GetValue("x_id"));
+		if (!$this->usuario->FldIsDetailKey) {
+			$this->usuario->setFormValue($objForm->GetValue("x_usuario"));
+		}
+		$this->usuario->setOldValue($objForm->GetValue("o_usuario"));
+		if (!$this->passwd->FldIsDetailKey) {
+			$this->passwd->setFormValue($objForm->GetValue("x_passwd"));
+		}
+		$this->passwd->setOldValue($objForm->GetValue("o_passwd"));
+	}
+
+	// Restore form values
+	function RestoreFormValues() {
+		global $objForm;
+		if ($this->CurrentAction <> "gridadd" && $this->CurrentAction <> "add")
+			$this->id->CurrentValue = $this->id->FormValue;
+		$this->usuario->CurrentValue = $this->usuario->FormValue;
+		$this->passwd->CurrentValue = $this->passwd->FormValue;
 	}
 
 	// Load recordset
@@ -1299,6 +2002,7 @@ class cusuarios_list extends cusuarios {
 		// Call Row Selected event
 		$row = &$rs->fields;
 		$this->Row_Selected($row);
+		$this->id->setDbValue($rs->fields('id'));
 		$this->usuario->setDbValue($rs->fields('usuario'));
 		$this->passwd->setDbValue($rs->fields('passwd'));
 	}
@@ -1307,6 +2011,7 @@ class cusuarios_list extends cusuarios {
 	function LoadDbValues(&$rs) {
 		if (!$rs || !is_array($rs) && $rs->EOF) return;
 		$row = is_array($rs) ? $rs : $rs->fields;
+		$this->id->DbValue = $row['id'];
 		$this->usuario->DbValue = $row['usuario'];
 		$this->passwd->DbValue = $row['passwd'];
 	}
@@ -1316,6 +2021,10 @@ class cusuarios_list extends cusuarios {
 
 		// Load key values from Session
 		$bValidKey = TRUE;
+		if (strval($this->getKey("id")) <> "")
+			$this->id->CurrentValue = $this->getKey("id"); // id
+		else
+			$bValidKey = FALSE;
 
 		// Load old recordset
 		if ($bValidKey) {
@@ -1346,18 +2055,28 @@ class cusuarios_list extends cusuarios {
 		$this->Row_Rendering();
 
 		// Common render codes for all row types
+		// id
 		// usuario
 		// passwd
 
 		if ($this->RowType == EW_ROWTYPE_VIEW) { // View row
+
+		// id
+		$this->id->ViewValue = $this->id->CurrentValue;
+		$this->id->ViewCustomAttributes = "";
 
 		// usuario
 		$this->usuario->ViewValue = $this->usuario->CurrentValue;
 		$this->usuario->ViewCustomAttributes = "";
 
 		// passwd
-		$this->passwd->ViewValue = $this->passwd->CurrentValue;
+		$this->passwd->ViewValue = $Language->Phrase("PasswordMask");
 		$this->passwd->ViewCustomAttributes = "";
+
+			// id
+			$this->id->LinkCustomAttributes = "";
+			$this->id->HrefValue = "";
+			$this->id->TooltipValue = "";
 
 			// usuario
 			$this->usuario->LinkCustomAttributes = "";
@@ -1368,11 +2087,293 @@ class cusuarios_list extends cusuarios {
 			$this->passwd->LinkCustomAttributes = "";
 			$this->passwd->HrefValue = "";
 			$this->passwd->TooltipValue = "";
+		} elseif ($this->RowType == EW_ROWTYPE_ADD) { // Add row
+
+			// id
+			// usuario
+
+			$this->usuario->EditAttrs["class"] = "form-control";
+			$this->usuario->EditCustomAttributes = "";
+			$this->usuario->EditValue = ew_HtmlEncode($this->usuario->CurrentValue);
+			$this->usuario->PlaceHolder = ew_RemoveHtml($this->usuario->FldCaption());
+
+			// passwd
+			$this->passwd->EditAttrs["class"] = "form-control ewPasswordStrength";
+			$this->passwd->EditCustomAttributes = "";
+			$this->passwd->EditValue = ew_HtmlEncode($this->passwd->CurrentValue);
+			$this->passwd->PlaceHolder = ew_RemoveHtml($this->passwd->FldCaption());
+
+			// Edit refer script
+			// id
+
+			$this->id->HrefValue = "";
+
+			// usuario
+			$this->usuario->HrefValue = "";
+
+			// passwd
+			$this->passwd->HrefValue = "";
+		} elseif ($this->RowType == EW_ROWTYPE_EDIT) { // Edit row
+
+			// id
+			$this->id->EditAttrs["class"] = "form-control";
+			$this->id->EditCustomAttributes = "";
+			$this->id->EditValue = $this->id->CurrentValue;
+			$this->id->ViewCustomAttributes = "";
+
+			// usuario
+			$this->usuario->EditAttrs["class"] = "form-control";
+			$this->usuario->EditCustomAttributes = "";
+			$this->usuario->EditValue = ew_HtmlEncode($this->usuario->CurrentValue);
+			$this->usuario->PlaceHolder = ew_RemoveHtml($this->usuario->FldCaption());
+
+			// passwd
+			$this->passwd->EditAttrs["class"] = "form-control ewPasswordStrength";
+			$this->passwd->EditCustomAttributes = "";
+			$this->passwd->EditValue = ew_HtmlEncode($this->passwd->CurrentValue);
+			$this->passwd->PlaceHolder = ew_RemoveHtml($this->passwd->FldCaption());
+
+			// Edit refer script
+			// id
+
+			$this->id->HrefValue = "";
+
+			// usuario
+			$this->usuario->HrefValue = "";
+
+			// passwd
+			$this->passwd->HrefValue = "";
+		}
+		if ($this->RowType == EW_ROWTYPE_ADD ||
+			$this->RowType == EW_ROWTYPE_EDIT ||
+			$this->RowType == EW_ROWTYPE_SEARCH) { // Add / Edit / Search row
+			$this->SetupFieldTitles();
 		}
 
 		// Call Row Rendered event
 		if ($this->RowType <> EW_ROWTYPE_AGGREGATEINIT)
 			$this->Row_Rendered();
+	}
+
+	// Validate form
+	function ValidateForm() {
+		global $Language, $gsFormError;
+
+		// Initialize form error message
+		$gsFormError = "";
+
+		// Check if validation required
+		if (!EW_SERVER_VALIDATE)
+			return ($gsFormError == "");
+		if (!$this->usuario->FldIsDetailKey && !is_null($this->usuario->FormValue) && $this->usuario->FormValue == "") {
+			ew_AddMessage($gsFormError, str_replace("%s", $this->usuario->FldCaption(), $this->usuario->ReqErrMsg));
+		}
+		if (!$this->passwd->FldIsDetailKey && !is_null($this->passwd->FormValue) && $this->passwd->FormValue == "") {
+			ew_AddMessage($gsFormError, str_replace("%s", $this->passwd->FldCaption(), $this->passwd->ReqErrMsg));
+		}
+
+		// Return validate result
+		$ValidateForm = ($gsFormError == "");
+
+		// Call Form_CustomValidate event
+		$sFormCustomError = "";
+		$ValidateForm = $ValidateForm && $this->Form_CustomValidate($sFormCustomError);
+		if ($sFormCustomError <> "") {
+			ew_AddMessage($gsFormError, $sFormCustomError);
+		}
+		return $ValidateForm;
+	}
+
+	//
+	// Delete records based on current filter
+	//
+	function DeleteRows() {
+		global $Language, $Security;
+		if (!$Security->CanDelete()) {
+			$this->setFailureMessage($Language->Phrase("NoDeletePermission")); // No delete permission
+			return FALSE;
+		}
+		$DeleteRows = TRUE;
+		$sSql = $this->SQL();
+		$conn = &$this->Connection();
+		$conn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+		$rs = $conn->Execute($sSql);
+		$conn->raiseErrorFn = '';
+		if ($rs === FALSE) {
+			return FALSE;
+		} elseif ($rs->EOF) {
+			$this->setFailureMessage($Language->Phrase("NoRecord")); // No record found
+			$rs->Close();
+			return FALSE;
+
+		//} else {
+		//	$this->LoadRowValues($rs); // Load row values
+
+		}
+		$rows = ($rs) ? $rs->GetRows() : array();
+
+		// Clone old rows
+		$rsold = $rows;
+		if ($rs)
+			$rs->Close();
+
+		// Call row deleting event
+		if ($DeleteRows) {
+			foreach ($rsold as $row) {
+				$DeleteRows = $this->Row_Deleting($row);
+				if (!$DeleteRows) break;
+			}
+		}
+		if ($DeleteRows) {
+			$sKey = "";
+			foreach ($rsold as $row) {
+				$sThisKey = "";
+				if ($sThisKey <> "") $sThisKey .= $GLOBALS["EW_COMPOSITE_KEY_SEPARATOR"];
+				$sThisKey .= $row['id'];
+				$conn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+				$DeleteRows = $this->Delete($row); // Delete
+				$conn->raiseErrorFn = '';
+				if ($DeleteRows === FALSE)
+					break;
+				if ($sKey <> "") $sKey .= ", ";
+				$sKey .= $sThisKey;
+			}
+		} else {
+
+			// Set up error message
+			if ($this->getSuccessMessage() <> "" || $this->getFailureMessage() <> "") {
+
+				// Use the message, do nothing
+			} elseif ($this->CancelMessage <> "") {
+				$this->setFailureMessage($this->CancelMessage);
+				$this->CancelMessage = "";
+			} else {
+				$this->setFailureMessage($Language->Phrase("DeleteCancelled"));
+			}
+		}
+		if ($DeleteRows) {
+		} else {
+		}
+
+		// Call Row Deleted event
+		if ($DeleteRows) {
+			foreach ($rsold as $row) {
+				$this->Row_Deleted($row);
+			}
+		}
+		return $DeleteRows;
+	}
+
+	// Update record based on key values
+	function EditRow() {
+		global $Security, $Language;
+		$sFilter = $this->KeyFilter();
+		$sFilter = $this->ApplyUserIDFilters($sFilter);
+		$conn = &$this->Connection();
+		$this->CurrentFilter = $sFilter;
+		$sSql = $this->SQL();
+		$conn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+		$rs = $conn->Execute($sSql);
+		$conn->raiseErrorFn = '';
+		if ($rs === FALSE)
+			return FALSE;
+		if ($rs->EOF) {
+			$this->setFailureMessage($Language->Phrase("NoRecord")); // Set no record message
+			$EditRow = FALSE; // Update Failed
+		} else {
+
+			// Save old values
+			$rsold = &$rs->fields;
+			$this->LoadDbValues($rsold);
+			$rsnew = array();
+
+			// usuario
+			$this->usuario->SetDbValueDef($rsnew, $this->usuario->CurrentValue, "", $this->usuario->ReadOnly);
+
+			// passwd
+			$this->passwd->SetDbValueDef($rsnew, $this->passwd->CurrentValue, "", $this->passwd->ReadOnly || (EW_ENCRYPTED_PASSWORD && $rs->fields('passwd') == $this->passwd->CurrentValue));
+
+			// Call Row Updating event
+			$bUpdateRow = $this->Row_Updating($rsold, $rsnew);
+			if ($bUpdateRow) {
+				$conn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+				if (count($rsnew) > 0)
+					$EditRow = $this->Update($rsnew, "", $rsold);
+				else
+					$EditRow = TRUE; // No field to update
+				$conn->raiseErrorFn = '';
+				if ($EditRow) {
+				}
+			} else {
+				if ($this->getSuccessMessage() <> "" || $this->getFailureMessage() <> "") {
+
+					// Use the message, do nothing
+				} elseif ($this->CancelMessage <> "") {
+					$this->setFailureMessage($this->CancelMessage);
+					$this->CancelMessage = "";
+				} else {
+					$this->setFailureMessage($Language->Phrase("UpdateCancelled"));
+				}
+				$EditRow = FALSE;
+			}
+		}
+
+		// Call Row_Updated event
+		if ($EditRow)
+			$this->Row_Updated($rsold, $rsnew);
+		$rs->Close();
+		return $EditRow;
+	}
+
+	// Add record
+	function AddRow($rsold = NULL) {
+		global $Language, $Security;
+		$conn = &$this->Connection();
+
+		// Load db values from rsold
+		if ($rsold) {
+			$this->LoadDbValues($rsold);
+		}
+		$rsnew = array();
+
+		// usuario
+		$this->usuario->SetDbValueDef($rsnew, $this->usuario->CurrentValue, "", FALSE);
+
+		// passwd
+		$this->passwd->SetDbValueDef($rsnew, $this->passwd->CurrentValue, "", FALSE);
+
+		// Call Row Inserting event
+		$rs = ($rsold == NULL) ? NULL : $rsold->fields;
+		$bInsertRow = $this->Row_Inserting($rs, $rsnew);
+		if ($bInsertRow) {
+			$conn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+			$AddRow = $this->Insert($rsnew);
+			$conn->raiseErrorFn = '';
+			if ($AddRow) {
+
+				// Get insert id if necessary
+				$this->id->setDbValue($conn->Insert_ID());
+				$rsnew['id'] = $this->id->DbValue;
+			}
+		} else {
+			if ($this->getSuccessMessage() <> "" || $this->getFailureMessage() <> "") {
+
+				// Use the message, do nothing
+			} elseif ($this->CancelMessage <> "") {
+				$this->setFailureMessage($this->CancelMessage);
+				$this->CancelMessage = "";
+			} else {
+				$this->setFailureMessage($Language->Phrase("InsertCancelled"));
+			}
+			$AddRow = FALSE;
+		}
+		if ($AddRow) {
+
+			// Call Row Inserted event
+			$rs = ($rsold == NULL) ? NULL : $rsold->fields;
+			$this->Row_Inserted($rs, $rsnew);
+		}
+		return $AddRow;
 	}
 
 	// Set up Breadcrumb
@@ -1530,6 +2531,53 @@ var CurrentPageID = EW_PAGE_ID = "list";
 var CurrentForm = fusuarioslist = new ew_Form("fusuarioslist", "list");
 fusuarioslist.FormKeyCountName = '<?php echo $usuarios_list->FormKeyCountName ?>';
 
+// Validate form
+fusuarioslist.Validate = function() {
+	if (!this.ValidateRequired)
+		return true; // Ignore validation
+	var $ = jQuery, fobj = this.GetForm(), $fobj = $(fobj);
+	if ($fobj.find("#a_confirm").val() == "F")
+		return true;
+	var elm, felm, uelm, addcnt = 0;
+	var $k = $fobj.find("#" + this.FormKeyCountName); // Get key_count
+	var rowcnt = ($k[0]) ? parseInt($k.val(), 10) : 1;
+	var startcnt = (rowcnt == 0) ? 0 : 1; // Check rowcnt == 0 => Inline-Add
+	var gridinsert = $fobj.find("#a_list").val() == "gridinsert";
+	for (var i = startcnt; i <= rowcnt; i++) {
+		var infix = ($k[0]) ? String(i) : "";
+		$fobj.data("rowindex", infix);
+		var checkrow = (gridinsert) ? !this.EmptyRow(infix) : true;
+		if (checkrow) {
+			addcnt++;
+			elm = this.GetElements("x" + infix + "_usuario");
+			if (elm && !ew_IsHidden(elm) && !ew_HasValue(elm))
+				return this.OnError(elm, "<?php echo ew_JsEncode2(str_replace("%s", $usuarios->usuario->FldCaption(), $usuarios->usuario->ReqErrMsg)) ?>");
+			elm = this.GetElements("x" + infix + "_passwd");
+			if (elm && !ew_IsHidden(elm) && !ew_HasValue(elm))
+				return this.OnError(elm, "<?php echo ew_JsEncode2(str_replace("%s", $usuarios->passwd->FldCaption(), $usuarios->passwd->ReqErrMsg)) ?>");
+			if ($(fobj.x_passwd).hasClass("ewPasswordStrength") && !$(fobj.x_passwd).data("validated"))
+				return this.OnError(fobj.x_passwd, ewLanguage.Phrase("PasswordTooSimple"));
+
+			// Fire Form_CustomValidate event
+			if (!this.Form_CustomValidate(fobj))
+				return false;
+		} // End Grid Add checking
+	}
+	if (gridinsert && addcnt == 0) { // No row added
+		ew_Alert(ewLanguage.Phrase("NoAddRecord"));
+		return false;
+	}
+	return true;
+}
+
+// Check empty row
+fusuarioslist.EmptyRow = function(infix) {
+	var fobj = this.Form;
+	if (ew_ValueChanged(fobj, infix, "usuario", false)) return false;
+	if (ew_ValueChanged(fobj, infix, "passwd", false)) return false;
+	return true;
+}
+
 // Form_CustomValidate event
 fusuarioslist.Form_CustomValidate = 
  function(fobj) { // DO NOT CHANGE THIS LINE!
@@ -1569,6 +2617,13 @@ var CurrentSearchForm = fusuarioslistsrch = new ew_Form("fusuarioslistsrch");
 <div class="clearfix"></div>
 </div>
 <?php
+if ($usuarios->CurrentAction == "gridadd") {
+	$usuarios->CurrentFilter = "0=1";
+	$usuarios_list->StartRec = 1;
+	$usuarios_list->DisplayRecs = $usuarios->GridAddRowCount;
+	$usuarios_list->TotalRecs = $usuarios_list->DisplayRecs;
+	$usuarios_list->StopRec = $usuarios_list->DisplayRecs;
+} else {
 	$bSelectLimit = $usuarios_list->UseSelectLimit;
 	if ($bSelectLimit) {
 		if ($usuarios_list->TotalRecs <= 0)
@@ -1594,6 +2649,7 @@ var CurrentSearchForm = fusuarioslistsrch = new ew_Form("fusuarioslistsrch");
 		else
 			$usuarios_list->setWarningMessage($Language->Phrase("NoRecord"));
 	}
+}
 $usuarios_list->RenderOtherOptions();
 ?>
 <?php if ($Security->CanSearch()) { ?>
@@ -1693,7 +2749,7 @@ $usuarios_list->ShowMessage();
 <?php } ?>
 <input type="hidden" name="t" value="usuarios">
 <div id="gmp_usuarios" class="<?php if (ew_IsResponsiveLayout()) { echo "table-responsive "; } ?>ewGridMiddlePanel">
-<?php if ($usuarios_list->TotalRecs > 0) { ?>
+<?php if ($usuarios_list->TotalRecs > 0 || $usuarios->CurrentAction == "add" || $usuarios->CurrentAction == "copy") { ?>
 <table id="tbl_usuarioslist" class="table ewTable">
 <?php echo $usuarios->TableCustomInnerHtml ?>
 <thead><!-- Table header -->
@@ -1709,6 +2765,15 @@ $usuarios_list->RenderListOptions();
 // Render list options (header, left)
 $usuarios_list->ListOptions->Render("header", "left");
 ?>
+<?php if ($usuarios->id->Visible) { // id ?>
+	<?php if ($usuarios->SortUrl($usuarios->id) == "") { ?>
+		<th data-name="id"><div id="elh_usuarios_id" class="usuarios_id"><div class="ewTableHeaderCaption"><?php echo $usuarios->id->FldCaption() ?></div></div></th>
+	<?php } else { ?>
+		<th data-name="id"><div class="ewPointer" onclick="ew_Sort(event,'<?php echo $usuarios->SortUrl($usuarios->id) ?>',2);"><div id="elh_usuarios_id" class="usuarios_id">
+			<div class="ewTableHeaderBtn"><span class="ewTableHeaderCaption"><?php echo $usuarios->id->FldCaption() ?></span><span class="ewTableHeaderSort"><?php if ($usuarios->id->getSort() == "ASC") { ?><span class="caret ewSortUp"></span><?php } elseif ($usuarios->id->getSort() == "DESC") { ?><span class="caret"></span><?php } ?></span></div>
+        </div></div></th>
+	<?php } ?>
+<?php } ?>		
 <?php if ($usuarios->usuario->Visible) { // usuario ?>
 	<?php if ($usuarios->SortUrl($usuarios->usuario) == "") { ?>
 		<th data-name="usuario"><div id="elh_usuarios_usuario" class="usuarios_usuario"><div class="ewTableHeaderCaption"><?php echo $usuarios->usuario->FldCaption() ?></div></div></th>
@@ -1723,7 +2788,7 @@ $usuarios_list->ListOptions->Render("header", "left");
 		<th data-name="passwd"><div id="elh_usuarios_passwd" class="usuarios_passwd"><div class="ewTableHeaderCaption"><?php echo $usuarios->passwd->FldCaption() ?></div></div></th>
 	<?php } else { ?>
 		<th data-name="passwd"><div class="ewPointer" onclick="ew_Sort(event,'<?php echo $usuarios->SortUrl($usuarios->passwd) ?>',2);"><div id="elh_usuarios_passwd" class="usuarios_passwd">
-			<div class="ewTableHeaderBtn"><span class="ewTableHeaderCaption"><?php echo $usuarios->passwd->FldCaption() ?><?php echo $Language->Phrase("SrchLegend") ?></span><span class="ewTableHeaderSort"><?php if ($usuarios->passwd->getSort() == "ASC") { ?><span class="caret ewSortUp"></span><?php } elseif ($usuarios->passwd->getSort() == "DESC") { ?><span class="caret"></span><?php } ?></span></div>
+			<div class="ewTableHeaderBtn"><span class="ewTableHeaderCaption"><?php echo $usuarios->passwd->FldCaption() ?></span><span class="ewTableHeaderSort"><?php if ($usuarios->passwd->getSort() == "ASC") { ?><span class="caret ewSortUp"></span><?php } elseif ($usuarios->passwd->getSort() == "DESC") { ?><span class="caret"></span><?php } ?></span></div>
         </div></div></th>
 	<?php } ?>
 <?php } ?>		
@@ -1736,6 +2801,77 @@ $usuarios_list->ListOptions->Render("header", "right");
 </thead>
 <tbody>
 <?php
+	if ($usuarios->CurrentAction == "add" || $usuarios->CurrentAction == "copy") {
+		$usuarios_list->RowIndex = 0;
+		$usuarios_list->KeyCount = $usuarios_list->RowIndex;
+		if ($usuarios->CurrentAction == "copy" && !$usuarios_list->LoadRow())
+				$usuarios->CurrentAction = "add";
+		if ($usuarios->CurrentAction == "add")
+			$usuarios_list->LoadDefaultValues();
+		if ($usuarios->EventCancelled) // Insert failed
+			$usuarios_list->RestoreFormValues(); // Restore form values
+
+		// Set row properties
+		$usuarios->ResetAttrs();
+		$usuarios->RowAttrs = array_merge($usuarios->RowAttrs, array('data-rowindex'=>0, 'id'=>'r0_usuarios', 'data-rowtype'=>EW_ROWTYPE_ADD));
+		$usuarios->RowType = EW_ROWTYPE_ADD;
+
+		// Render row
+		$usuarios_list->RenderRow();
+
+		// Render list options
+		$usuarios_list->RenderListOptions();
+		$usuarios_list->StartRowCnt = 0;
+?>
+	<tr<?php echo $usuarios->RowAttributes() ?>>
+<?php
+
+// Render list options (body, left)
+$usuarios_list->ListOptions->Render("body", "left", $usuarios_list->RowCnt);
+?>
+	<?php if ($usuarios->id->Visible) { // id ?>
+		<td data-name="id">
+<input type="hidden" data-table="usuarios" data-field="x_id" name="o<?php echo $usuarios_list->RowIndex ?>_id" id="o<?php echo $usuarios_list->RowIndex ?>_id" value="<?php echo ew_HtmlEncode($usuarios->id->OldValue) ?>">
+</td>
+	<?php } ?>
+	<?php if ($usuarios->usuario->Visible) { // usuario ?>
+		<td data-name="usuario">
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_usuario" class="form-group usuarios_usuario">
+<input type="text" data-table="usuarios" data-field="x_usuario" name="x<?php echo $usuarios_list->RowIndex ?>_usuario" id="x<?php echo $usuarios_list->RowIndex ?>_usuario" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->usuario->getPlaceHolder()) ?>" value="<?php echo $usuarios->usuario->EditValue ?>"<?php echo $usuarios->usuario->EditAttributes() ?>>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_usuario" name="o<?php echo $usuarios_list->RowIndex ?>_usuario" id="o<?php echo $usuarios_list->RowIndex ?>_usuario" value="<?php echo ew_HtmlEncode($usuarios->usuario->OldValue) ?>">
+</td>
+	<?php } ?>
+	<?php if ($usuarios->passwd->Visible) { // passwd ?>
+		<td data-name="passwd">
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_passwd" class="form-group usuarios_passwd">
+<div class="input-group" id="ig_x_passwd">
+<input type="password" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd" data-table="usuarios" data-field="x_passwd" name="x<?php echo $usuarios_list->RowIndex ?>_passwd" id="x<?php echo $usuarios_list->RowIndex ?>_passwd" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->passwd->getPlaceHolder()) ?>"<?php echo $usuarios->passwd->EditAttributes() ?>>
+<span class="input-group-btn">
+	<button type="button" class="btn btn-default ewPasswordGenerator" title="<?php echo ew_HtmlTitle($Language->Phrase("GeneratePassword")) ?>" data-password-field="x_passwd" data-password-confirm="c_passwd" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd"><?php echo $Language->Phrase("GeneratePassword") ?></button>
+</span>
+</div>
+<span class="help-block" id="pgt_x_passwd" style="display: none;"></span>
+<div class="progress ewPasswordStrengthBar" id="pst_x_passwd" style="display: none;">
+	<div class="progress-bar" role="progressbar"></div>
+</div>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_passwd" name="o<?php echo $usuarios_list->RowIndex ?>_passwd" id="o<?php echo $usuarios_list->RowIndex ?>_passwd" value="<?php echo ew_HtmlEncode($usuarios->passwd->OldValue) ?>">
+</td>
+	<?php } ?>
+<?php
+
+// Render list options (body, right)
+$usuarios_list->ListOptions->Render("body", "right", $usuarios_list->RowCnt);
+?>
+<script type="text/javascript">
+fusuarioslist.UpdateOpts(<?php echo $usuarios_list->RowIndex ?>);
+</script>
+	</tr>
+<?php
+}
+?>
+<?php
 if ($usuarios->ExportAll && $usuarios->Export <> "") {
 	$usuarios_list->StopRec = $usuarios_list->TotalRecs;
 } else {
@@ -1745,6 +2881,15 @@ if ($usuarios->ExportAll && $usuarios->Export <> "") {
 		$usuarios_list->StopRec = $usuarios_list->StartRec + $usuarios_list->DisplayRecs - 1;
 	else
 		$usuarios_list->StopRec = $usuarios_list->TotalRecs;
+}
+
+// Restore number of post back records
+if ($objForm) {
+	$objForm->Index = -1;
+	if ($objForm->HasValue($usuarios_list->FormKeyCountName) && ($usuarios->CurrentAction == "gridadd" || $usuarios->CurrentAction == "gridedit" || $usuarios->CurrentAction == "F")) {
+		$usuarios_list->KeyCount = $objForm->GetValue($usuarios_list->FormKeyCountName);
+		$usuarios_list->StopRec = $usuarios_list->StartRec + $usuarios_list->KeyCount - 1;
+	}
 }
 $usuarios_list->RecCnt = $usuarios_list->StartRec - 1;
 if ($usuarios_list->Recordset && !$usuarios_list->Recordset->EOF) {
@@ -1760,10 +2905,27 @@ if ($usuarios_list->Recordset && !$usuarios_list->Recordset->EOF) {
 $usuarios->RowType = EW_ROWTYPE_AGGREGATEINIT;
 $usuarios->ResetAttrs();
 $usuarios_list->RenderRow();
+$usuarios_list->EditRowCnt = 0;
+if ($usuarios->CurrentAction == "edit")
+	$usuarios_list->RowIndex = 1;
+if ($usuarios->CurrentAction == "gridadd")
+	$usuarios_list->RowIndex = 0;
+if ($usuarios->CurrentAction == "gridedit")
+	$usuarios_list->RowIndex = 0;
 while ($usuarios_list->RecCnt < $usuarios_list->StopRec) {
 	$usuarios_list->RecCnt++;
 	if (intval($usuarios_list->RecCnt) >= intval($usuarios_list->StartRec)) {
 		$usuarios_list->RowCnt++;
+		if ($usuarios->CurrentAction == "gridadd" || $usuarios->CurrentAction == "gridedit" || $usuarios->CurrentAction == "F") {
+			$usuarios_list->RowIndex++;
+			$objForm->Index = $usuarios_list->RowIndex;
+			if ($objForm->HasValue($usuarios_list->FormActionName))
+				$usuarios_list->RowAction = strval($objForm->GetValue($usuarios_list->FormActionName));
+			elseif ($usuarios->CurrentAction == "gridadd")
+				$usuarios_list->RowAction = "insert";
+			else
+				$usuarios_list->RowAction = "";
+		}
 
 		// Set up key count
 		$usuarios_list->KeyCount = $usuarios_list->RowIndex;
@@ -1772,10 +2934,37 @@ while ($usuarios_list->RecCnt < $usuarios_list->StopRec) {
 		$usuarios->ResetAttrs();
 		$usuarios->CssClass = "";
 		if ($usuarios->CurrentAction == "gridadd") {
+			$usuarios_list->LoadDefaultValues(); // Load default values
 		} else {
 			$usuarios_list->LoadRowValues($usuarios_list->Recordset); // Load row values
 		}
 		$usuarios->RowType = EW_ROWTYPE_VIEW; // Render view
+		if ($usuarios->CurrentAction == "gridadd") // Grid add
+			$usuarios->RowType = EW_ROWTYPE_ADD; // Render add
+		if ($usuarios->CurrentAction == "gridadd" && $usuarios->EventCancelled && !$objForm->HasValue("k_blankrow")) // Insert failed
+			$usuarios_list->RestoreCurrentRowFormValues($usuarios_list->RowIndex); // Restore form values
+		if ($usuarios->CurrentAction == "edit") {
+			if ($usuarios_list->CheckInlineEditKey() && $usuarios_list->EditRowCnt == 0) { // Inline edit
+				$usuarios->RowType = EW_ROWTYPE_EDIT; // Render edit
+			}
+		}
+		if ($usuarios->CurrentAction == "gridedit") { // Grid edit
+			if ($usuarios->EventCancelled) {
+				$usuarios_list->RestoreCurrentRowFormValues($usuarios_list->RowIndex); // Restore form values
+			}
+			if ($usuarios_list->RowAction == "insert")
+				$usuarios->RowType = EW_ROWTYPE_ADD; // Render add
+			else
+				$usuarios->RowType = EW_ROWTYPE_EDIT; // Render edit
+		}
+		if ($usuarios->CurrentAction == "edit" && $usuarios->RowType == EW_ROWTYPE_EDIT && $usuarios->EventCancelled) { // Update failed
+			$objForm->Index = 1;
+			$usuarios_list->RestoreFormValues(); // Restore form values
+		}
+		if ($usuarios->CurrentAction == "gridedit" && ($usuarios->RowType == EW_ROWTYPE_EDIT || $usuarios->RowType == EW_ROWTYPE_ADD) && $usuarios->EventCancelled) // Update failed
+			$usuarios_list->RestoreCurrentRowFormValues($usuarios_list->RowIndex); // Restore form values
+		if ($usuarios->RowType == EW_ROWTYPE_EDIT) // Edit row
+			$usuarios_list->EditRowCnt++;
 
 		// Set up row id / data-rowindex
 		$usuarios->RowAttrs = array_merge($usuarios->RowAttrs, array('data-rowindex'=>$usuarios_list->RowCnt, 'id'=>'r' . $usuarios_list->RowCnt . '_usuarios', 'data-rowtype'=>$usuarios->RowType));
@@ -1785,6 +2974,9 @@ while ($usuarios_list->RecCnt < $usuarios_list->StopRec) {
 
 		// Render list options
 		$usuarios_list->RenderListOptions();
+
+		// Skip delete row / empty row for confirm page
+		if ($usuarios_list->RowAction <> "delete" && $usuarios_list->RowAction <> "insertdelete" && !($usuarios_list->RowAction == "insert" && $usuarios->CurrentAction == "F" && $usuarios_list->EmptyRow())) {
 ?>
 	<tr<?php echo $usuarios->RowAttributes() ?>>
 <?php
@@ -1792,20 +2984,84 @@ while ($usuarios_list->RecCnt < $usuarios_list->StopRec) {
 // Render list options (body, left)
 $usuarios_list->ListOptions->Render("body", "left", $usuarios_list->RowCnt);
 ?>
+	<?php if ($usuarios->id->Visible) { // id ?>
+		<td data-name="id"<?php echo $usuarios->id->CellAttributes() ?>>
+<?php if ($usuarios->RowType == EW_ROWTYPE_ADD) { // Add record ?>
+<input type="hidden" data-table="usuarios" data-field="x_id" name="o<?php echo $usuarios_list->RowIndex ?>_id" id="o<?php echo $usuarios_list->RowIndex ?>_id" value="<?php echo ew_HtmlEncode($usuarios->id->OldValue) ?>">
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_EDIT) { // Edit record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_id" class="form-group usuarios_id">
+<span<?php echo $usuarios->id->ViewAttributes() ?>>
+<p class="form-control-static"><?php echo $usuarios->id->EditValue ?></p></span>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_id" name="x<?php echo $usuarios_list->RowIndex ?>_id" id="x<?php echo $usuarios_list->RowIndex ?>_id" value="<?php echo ew_HtmlEncode($usuarios->id->CurrentValue) ?>">
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_VIEW) { // View record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_id" class="usuarios_id">
+<span<?php echo $usuarios->id->ViewAttributes() ?>>
+<?php echo $usuarios->id->ListViewValue() ?></span>
+</span>
+<?php } ?>
+<a id="<?php echo $usuarios_list->PageObjName . "_row_" . $usuarios_list->RowCnt ?>"></a></td>
+	<?php } ?>
 	<?php if ($usuarios->usuario->Visible) { // usuario ?>
 		<td data-name="usuario"<?php echo $usuarios->usuario->CellAttributes() ?>>
+<?php if ($usuarios->RowType == EW_ROWTYPE_ADD) { // Add record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_usuario" class="form-group usuarios_usuario">
+<input type="text" data-table="usuarios" data-field="x_usuario" name="x<?php echo $usuarios_list->RowIndex ?>_usuario" id="x<?php echo $usuarios_list->RowIndex ?>_usuario" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->usuario->getPlaceHolder()) ?>" value="<?php echo $usuarios->usuario->EditValue ?>"<?php echo $usuarios->usuario->EditAttributes() ?>>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_usuario" name="o<?php echo $usuarios_list->RowIndex ?>_usuario" id="o<?php echo $usuarios_list->RowIndex ?>_usuario" value="<?php echo ew_HtmlEncode($usuarios->usuario->OldValue) ?>">
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_EDIT) { // Edit record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_usuario" class="form-group usuarios_usuario">
+<input type="text" data-table="usuarios" data-field="x_usuario" name="x<?php echo $usuarios_list->RowIndex ?>_usuario" id="x<?php echo $usuarios_list->RowIndex ?>_usuario" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->usuario->getPlaceHolder()) ?>" value="<?php echo $usuarios->usuario->EditValue ?>"<?php echo $usuarios->usuario->EditAttributes() ?>>
+</span>
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_VIEW) { // View record ?>
 <span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_usuario" class="usuarios_usuario">
 <span<?php echo $usuarios->usuario->ViewAttributes() ?>>
 <?php echo $usuarios->usuario->ListViewValue() ?></span>
 </span>
-<a id="<?php echo $usuarios_list->PageObjName . "_row_" . $usuarios_list->RowCnt ?>"></a></td>
+<?php } ?>
+</td>
 	<?php } ?>
 	<?php if ($usuarios->passwd->Visible) { // passwd ?>
 		<td data-name="passwd"<?php echo $usuarios->passwd->CellAttributes() ?>>
+<?php if ($usuarios->RowType == EW_ROWTYPE_ADD) { // Add record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_passwd" class="form-group usuarios_passwd">
+<div class="input-group" id="ig_x_passwd">
+<input type="password" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd" data-table="usuarios" data-field="x_passwd" name="x<?php echo $usuarios_list->RowIndex ?>_passwd" id="x<?php echo $usuarios_list->RowIndex ?>_passwd" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->passwd->getPlaceHolder()) ?>"<?php echo $usuarios->passwd->EditAttributes() ?>>
+<span class="input-group-btn">
+	<button type="button" class="btn btn-default ewPasswordGenerator" title="<?php echo ew_HtmlTitle($Language->Phrase("GeneratePassword")) ?>" data-password-field="x_passwd" data-password-confirm="c_passwd" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd"><?php echo $Language->Phrase("GeneratePassword") ?></button>
+</span>
+</div>
+<span class="help-block" id="pgt_x_passwd" style="display: none;"></span>
+<div class="progress ewPasswordStrengthBar" id="pst_x_passwd" style="display: none;">
+	<div class="progress-bar" role="progressbar"></div>
+</div>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_passwd" name="o<?php echo $usuarios_list->RowIndex ?>_passwd" id="o<?php echo $usuarios_list->RowIndex ?>_passwd" value="<?php echo ew_HtmlEncode($usuarios->passwd->OldValue) ?>">
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_EDIT) { // Edit record ?>
+<span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_passwd" class="form-group usuarios_passwd">
+<div class="input-group" id="ig_x_passwd">
+<input type="password" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd" data-table="usuarios" data-field="x_passwd" name="x<?php echo $usuarios_list->RowIndex ?>_passwd" id="x<?php echo $usuarios_list->RowIndex ?>_passwd" value="<?php echo $usuarios->passwd->EditValue ?>" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->passwd->getPlaceHolder()) ?>"<?php echo $usuarios->passwd->EditAttributes() ?>>
+<span class="input-group-btn">
+	<button type="button" class="btn btn-default ewPasswordGenerator" title="<?php echo ew_HtmlTitle($Language->Phrase("GeneratePassword")) ?>" data-password-field="x_passwd" data-password-confirm="c_passwd" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd"><?php echo $Language->Phrase("GeneratePassword") ?></button>
+</span>
+</div>
+<span class="help-block" id="pgt_x_passwd" style="display: none;"></span>
+<div class="progress ewPasswordStrengthBar" id="pst_x_passwd" style="display: none;">
+	<div class="progress-bar" role="progressbar"></div>
+</div>
+</span>
+<?php } ?>
+<?php if ($usuarios->RowType == EW_ROWTYPE_VIEW) { // View record ?>
 <span id="el<?php echo $usuarios_list->RowCnt ?>_usuarios_passwd" class="usuarios_passwd">
 <span<?php echo $usuarios->passwd->ViewAttributes() ?>>
 <?php echo $usuarios->passwd->ListViewValue() ?></span>
 </span>
+<?php } ?>
 </td>
 	<?php } ?>
 <?php
@@ -1814,14 +3070,102 @@ $usuarios_list->ListOptions->Render("body", "left", $usuarios_list->RowCnt);
 $usuarios_list->ListOptions->Render("body", "right", $usuarios_list->RowCnt);
 ?>
 	</tr>
+<?php if ($usuarios->RowType == EW_ROWTYPE_ADD || $usuarios->RowType == EW_ROWTYPE_EDIT) { ?>
+<script type="text/javascript">
+fusuarioslist.UpdateOpts(<?php echo $usuarios_list->RowIndex ?>);
+</script>
+<?php } ?>
 <?php
 	}
+	} // End delete row checking
 	if ($usuarios->CurrentAction <> "gridadd")
-		$usuarios_list->Recordset->MoveNext();
+		if (!$usuarios_list->Recordset->EOF) $usuarios_list->Recordset->MoveNext();
+}
+?>
+<?php
+	if ($usuarios->CurrentAction == "gridadd" || $usuarios->CurrentAction == "gridedit") {
+		$usuarios_list->RowIndex = '$rowindex$';
+		$usuarios_list->LoadDefaultValues();
+
+		// Set row properties
+		$usuarios->ResetAttrs();
+		$usuarios->RowAttrs = array_merge($usuarios->RowAttrs, array('data-rowindex'=>$usuarios_list->RowIndex, 'id'=>'r0_usuarios', 'data-rowtype'=>EW_ROWTYPE_ADD));
+		ew_AppendClass($usuarios->RowAttrs["class"], "ewTemplate");
+		$usuarios->RowType = EW_ROWTYPE_ADD;
+
+		// Render row
+		$usuarios_list->RenderRow();
+
+		// Render list options
+		$usuarios_list->RenderListOptions();
+		$usuarios_list->StartRowCnt = 0;
+?>
+	<tr<?php echo $usuarios->RowAttributes() ?>>
+<?php
+
+// Render list options (body, left)
+$usuarios_list->ListOptions->Render("body", "left", $usuarios_list->RowIndex);
+?>
+	<?php if ($usuarios->id->Visible) { // id ?>
+		<td data-name="id">
+<input type="hidden" data-table="usuarios" data-field="x_id" name="o<?php echo $usuarios_list->RowIndex ?>_id" id="o<?php echo $usuarios_list->RowIndex ?>_id" value="<?php echo ew_HtmlEncode($usuarios->id->OldValue) ?>">
+</td>
+	<?php } ?>
+	<?php if ($usuarios->usuario->Visible) { // usuario ?>
+		<td data-name="usuario">
+<span id="el$rowindex$_usuarios_usuario" class="form-group usuarios_usuario">
+<input type="text" data-table="usuarios" data-field="x_usuario" name="x<?php echo $usuarios_list->RowIndex ?>_usuario" id="x<?php echo $usuarios_list->RowIndex ?>_usuario" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->usuario->getPlaceHolder()) ?>" value="<?php echo $usuarios->usuario->EditValue ?>"<?php echo $usuarios->usuario->EditAttributes() ?>>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_usuario" name="o<?php echo $usuarios_list->RowIndex ?>_usuario" id="o<?php echo $usuarios_list->RowIndex ?>_usuario" value="<?php echo ew_HtmlEncode($usuarios->usuario->OldValue) ?>">
+</td>
+	<?php } ?>
+	<?php if ($usuarios->passwd->Visible) { // passwd ?>
+		<td data-name="passwd">
+<span id="el$rowindex$_usuarios_passwd" class="form-group usuarios_passwd">
+<div class="input-group" id="ig_x_passwd">
+<input type="password" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd" data-table="usuarios" data-field="x_passwd" name="x<?php echo $usuarios_list->RowIndex ?>_passwd" id="x<?php echo $usuarios_list->RowIndex ?>_passwd" size="30" maxlength="32" placeholder="<?php echo ew_HtmlEncode($usuarios->passwd->getPlaceHolder()) ?>"<?php echo $usuarios->passwd->EditAttributes() ?>>
+<span class="input-group-btn">
+	<button type="button" class="btn btn-default ewPasswordGenerator" title="<?php echo ew_HtmlTitle($Language->Phrase("GeneratePassword")) ?>" data-password-field="x_passwd" data-password-confirm="c_passwd" data-password-strength="pst_x_passwd" data-password-generated="pgt_x_passwd"><?php echo $Language->Phrase("GeneratePassword") ?></button>
+</span>
+</div>
+<span class="help-block" id="pgt_x_passwd" style="display: none;"></span>
+<div class="progress ewPasswordStrengthBar" id="pst_x_passwd" style="display: none;">
+	<div class="progress-bar" role="progressbar"></div>
+</div>
+</span>
+<input type="hidden" data-table="usuarios" data-field="x_passwd" name="o<?php echo $usuarios_list->RowIndex ?>_passwd" id="o<?php echo $usuarios_list->RowIndex ?>_passwd" value="<?php echo ew_HtmlEncode($usuarios->passwd->OldValue) ?>">
+</td>
+	<?php } ?>
+<?php
+
+// Render list options (body, right)
+$usuarios_list->ListOptions->Render("body", "right", $usuarios_list->RowCnt);
+?>
+<script type="text/javascript">
+fusuarioslist.UpdateOpts(<?php echo $usuarios_list->RowIndex ?>);
+</script>
+	</tr>
+<?php
 }
 ?>
 </tbody>
 </table>
+<?php } ?>
+<?php if ($usuarios->CurrentAction == "add" || $usuarios->CurrentAction == "copy") { ?>
+<input type="hidden" name="<?php echo $usuarios_list->FormKeyCountName ?>" id="<?php echo $usuarios_list->FormKeyCountName ?>" value="<?php echo $usuarios_list->KeyCount ?>">
+<?php } ?>
+<?php if ($usuarios->CurrentAction == "gridadd") { ?>
+<input type="hidden" name="a_list" id="a_list" value="gridinsert">
+<input type="hidden" name="<?php echo $usuarios_list->FormKeyCountName ?>" id="<?php echo $usuarios_list->FormKeyCountName ?>" value="<?php echo $usuarios_list->KeyCount ?>">
+<?php echo $usuarios_list->MultiSelectKey ?>
+<?php } ?>
+<?php if ($usuarios->CurrentAction == "edit") { ?>
+<input type="hidden" name="<?php echo $usuarios_list->FormKeyCountName ?>" id="<?php echo $usuarios_list->FormKeyCountName ?>" value="<?php echo $usuarios_list->KeyCount ?>">
+<?php } ?>
+<?php if ($usuarios->CurrentAction == "gridedit") { ?>
+<input type="hidden" name="a_list" id="a_list" value="gridupdate">
+<input type="hidden" name="<?php echo $usuarios_list->FormKeyCountName ?>" id="<?php echo $usuarios_list->FormKeyCountName ?>" value="<?php echo $usuarios_list->KeyCount ?>">
+<?php echo $usuarios_list->MultiSelectKey ?>
 <?php } ?>
 <?php if ($usuarios->CurrentAction == "") { ?>
 <input type="hidden" name="a_list" id="a_list" value="">

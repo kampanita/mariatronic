@@ -8,7 +8,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-//date_default_timezone_set('Europe/Madrid');
+date_default_timezone_set('Europe/Madrid');
 
 
 //

@@ -29,7 +29,7 @@ define("EW_CONFIG_FILE_FOLDER", EW_PROJECT_NAME . "", TRUE); // Config file name
 define("EW_PROJECT_ID", "{524C14CD-A0E3-4083-AF86-06203077AB82}", TRUE); // Project ID (GUID)
 $EW_RELATED_PROJECT_ID = "";
 $EW_RELATED_LANGUAGE_FOLDER = "";
-define("EW_RANDOM_KEY", 'JN0jRru9nqviCIqb', TRUE); // Random key for encryption
+define("EW_RANDOM_KEY", 'NdL7SWAuoxg6j27G', TRUE); // Random key for encryption
 define("EW_PROJECT_STYLESHEET_FILENAME", "phpcss/PROYECTO_BUENO_USAR_EL_12.css", TRUE); // Project stylesheet file name
 define("EW_CHARSET", "iso-8859-15", TRUE); // Project charset
 define("EW_EMAIL_CHARSET", EW_CHARSET, TRUE); // Email charset

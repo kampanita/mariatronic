@@ -450,6 +450,8 @@
 </menu>
 <menu id="6"><phrase id="menutext" value="Parametros"/>
 </menu>
+<menu id="19"><phrase id="menutext" value="Mantenimiento Usuarios"/>
+</menu>
 <menu id="8"><phrase id="menutext" value="Usuarios"/>
 </menu>
 <menu id="1"><phrase id="menutext" value="Tabla de Registro"/>
@@ -574,10 +576,22 @@
 </table>
 <table id="ip_php"><phrase id="tblcaption" value="Ip External actual"/>
 </table>
-<table id="usuarios"><phrase id="tblcaption" value="usuarios"/>
+<table id="usuarios"><phrase id="tblcaption" value="Mantenimiento Usuarios"/>
 <field id="usuario"><phrase id="fldcaption" value="usuario"/>
 </field>
 <field id="passwd"><phrase id="fldcaption" value="passwd"/>
+</field>
+<field id="id"><phrase id="fldcaption" value="id"/>
+</field>
+</table>
+<table id="view2"><phrase id="tblcaption" value="Mantenimiento Usuarios"/>
+<field id="usuario"><phrase id="fldcaption" value="usuario"/>
+</field>
+<field id="passwd"><phrase id="fldcaption" value="passwd"/>
+</field>
+<field id="usuario1"><phrase id="fldcaption" value="usuario"/>
+</field>
+<field id="passwd1"><phrase id="fldcaption" value="passwd"/>
 </field>
 </table>
 </project>
