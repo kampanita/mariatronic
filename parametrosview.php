@@ -21,7 +21,7 @@ class cparametros_view extends cparametros {
 	var $PageID = 'view';
 
 	// Project ID
-	var $ProjectID = "{28C31B56-5507-4BCF-B1AE-F273C6345D9C}";
+	var $ProjectID = "{524C14CD-A0E3-4083-AF86-06203077AB82}";
 
 	// Table name
 	var $TableName = 'parametros';
@@ -597,6 +597,12 @@ class cparametros_view extends cparametros {
 		$this->horas_floracion->setDbValue($rs->fields('horas_floracion'));
 		$this->hum_min->setDbValue($rs->fields('hum_min'));
 		$this->hum_max->setDbValue($rs->fields('hum_max'));
+		$this->DnsHost->setDbValue($rs->fields('DnsHost'));
+		$this->DnsUser->setDbValue($rs->fields('DnsUser'));
+		$this->DnsPasswd->setDbValue($rs->fields('DnsPasswd'));
+		$this->DnsUrl_Update->setDbValue($rs->fields('DnsUrl_Update'));
+		$this->WifiSSID->setDbValue($rs->fields('WifiSSID'));
+		$this->WifiPasswd->setDbValue($rs->fields('WifiPasswd'));
 	}
 
 	// Load DbValue from recordset
@@ -612,6 +618,12 @@ class cparametros_view extends cparametros {
 		$this->horas_floracion->DbValue = $row['horas_floracion'];
 		$this->hum_min->DbValue = $row['hum_min'];
 		$this->hum_max->DbValue = $row['hum_max'];
+		$this->DnsHost->DbValue = $row['DnsHost'];
+		$this->DnsUser->DbValue = $row['DnsUser'];
+		$this->DnsPasswd->DbValue = $row['DnsPasswd'];
+		$this->DnsUrl_Update->DbValue = $row['DnsUrl_Update'];
+		$this->WifiSSID->DbValue = $row['WifiSSID'];
+		$this->WifiPasswd->DbValue = $row['WifiPasswd'];
 	}
 
 	// Render row values based on field settings
@@ -647,6 +659,12 @@ class cparametros_view extends cparametros {
 		// horas_floracion
 		// hum_min
 		// hum_max
+		// DnsHost
+		// DnsUser
+		// DnsPasswd
+		// DnsUrl_Update
+		// WifiSSID
+		// WifiPasswd
 
 		if ($this->RowType == EW_ROWTYPE_VIEW) { // View row
 
@@ -685,6 +703,30 @@ class cparametros_view extends cparametros {
 		// hum_max
 		$this->hum_max->ViewValue = $this->hum_max->CurrentValue;
 		$this->hum_max->ViewCustomAttributes = "";
+
+		// DnsHost
+		$this->DnsHost->ViewValue = $this->DnsHost->CurrentValue;
+		$this->DnsHost->ViewCustomAttributes = "";
+
+		// DnsUser
+		$this->DnsUser->ViewValue = $this->DnsUser->CurrentValue;
+		$this->DnsUser->ViewCustomAttributes = "";
+
+		// DnsPasswd
+		$this->DnsPasswd->ViewValue = $this->DnsPasswd->CurrentValue;
+		$this->DnsPasswd->ViewCustomAttributes = "";
+
+		// DnsUrl_Update
+		$this->DnsUrl_Update->ViewValue = $this->DnsUrl_Update->CurrentValue;
+		$this->DnsUrl_Update->ViewCustomAttributes = "";
+
+		// WifiSSID
+		$this->WifiSSID->ViewValue = $this->WifiSSID->CurrentValue;
+		$this->WifiSSID->ViewCustomAttributes = "";
+
+		// WifiPasswd
+		$this->WifiPasswd->ViewValue = $this->WifiPasswd->CurrentValue;
+		$this->WifiPasswd->ViewCustomAttributes = "";
 
 			// id
 			$this->id->LinkCustomAttributes = "";
@@ -730,6 +772,36 @@ class cparametros_view extends cparametros {
 			$this->hum_max->LinkCustomAttributes = "";
 			$this->hum_max->HrefValue = "";
 			$this->hum_max->TooltipValue = "";
+
+			// DnsHost
+			$this->DnsHost->LinkCustomAttributes = "";
+			$this->DnsHost->HrefValue = "";
+			$this->DnsHost->TooltipValue = "";
+
+			// DnsUser
+			$this->DnsUser->LinkCustomAttributes = "";
+			$this->DnsUser->HrefValue = "";
+			$this->DnsUser->TooltipValue = "";
+
+			// DnsPasswd
+			$this->DnsPasswd->LinkCustomAttributes = "";
+			$this->DnsPasswd->HrefValue = "";
+			$this->DnsPasswd->TooltipValue = "";
+
+			// DnsUrl_Update
+			$this->DnsUrl_Update->LinkCustomAttributes = "";
+			$this->DnsUrl_Update->HrefValue = "";
+			$this->DnsUrl_Update->TooltipValue = "";
+
+			// WifiSSID
+			$this->WifiSSID->LinkCustomAttributes = "";
+			$this->WifiSSID->HrefValue = "";
+			$this->WifiSSID->TooltipValue = "";
+
+			// WifiPasswd
+			$this->WifiPasswd->LinkCustomAttributes = "";
+			$this->WifiPasswd->HrefValue = "";
+			$this->WifiPasswd->TooltipValue = "";
 		}
 
 		// Call Row Rendered event
@@ -1040,6 +1112,72 @@ $parametros_view->ShowMessage();
 <span id="el_parametros_hum_max">
 <span<?php echo $parametros->hum_max->ViewAttributes() ?>>
 <?php echo $parametros->hum_max->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->DnsHost->Visible) { // DnsHost ?>
+	<tr id="r_DnsHost">
+		<td><span id="elh_parametros_DnsHost"><?php echo $parametros->DnsHost->FldCaption() ?></span></td>
+		<td data-name="DnsHost"<?php echo $parametros->DnsHost->CellAttributes() ?>>
+<span id="el_parametros_DnsHost">
+<span<?php echo $parametros->DnsHost->ViewAttributes() ?>>
+<?php echo $parametros->DnsHost->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->DnsUser->Visible) { // DnsUser ?>
+	<tr id="r_DnsUser">
+		<td><span id="elh_parametros_DnsUser"><?php echo $parametros->DnsUser->FldCaption() ?></span></td>
+		<td data-name="DnsUser"<?php echo $parametros->DnsUser->CellAttributes() ?>>
+<span id="el_parametros_DnsUser">
+<span<?php echo $parametros->DnsUser->ViewAttributes() ?>>
+<?php echo $parametros->DnsUser->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->DnsPasswd->Visible) { // DnsPasswd ?>
+	<tr id="r_DnsPasswd">
+		<td><span id="elh_parametros_DnsPasswd"><?php echo $parametros->DnsPasswd->FldCaption() ?></span></td>
+		<td data-name="DnsPasswd"<?php echo $parametros->DnsPasswd->CellAttributes() ?>>
+<span id="el_parametros_DnsPasswd">
+<span<?php echo $parametros->DnsPasswd->ViewAttributes() ?>>
+<?php echo $parametros->DnsPasswd->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->DnsUrl_Update->Visible) { // DnsUrl_Update ?>
+	<tr id="r_DnsUrl_Update">
+		<td><span id="elh_parametros_DnsUrl_Update"><?php echo $parametros->DnsUrl_Update->FldCaption() ?></span></td>
+		<td data-name="DnsUrl_Update"<?php echo $parametros->DnsUrl_Update->CellAttributes() ?>>
+<span id="el_parametros_DnsUrl_Update">
+<span<?php echo $parametros->DnsUrl_Update->ViewAttributes() ?>>
+<?php echo $parametros->DnsUrl_Update->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->WifiSSID->Visible) { // WifiSSID ?>
+	<tr id="r_WifiSSID">
+		<td><span id="elh_parametros_WifiSSID"><?php echo $parametros->WifiSSID->FldCaption() ?></span></td>
+		<td data-name="WifiSSID"<?php echo $parametros->WifiSSID->CellAttributes() ?>>
+<span id="el_parametros_WifiSSID">
+<span<?php echo $parametros->WifiSSID->ViewAttributes() ?>>
+<?php echo $parametros->WifiSSID->ViewValue ?></span>
+</span>
+</td>
+	</tr>
+<?php } ?>
+<?php if ($parametros->WifiPasswd->Visible) { // WifiPasswd ?>
+	<tr id="r_WifiPasswd">
+		<td><span id="elh_parametros_WifiPasswd"><?php echo $parametros->WifiPasswd->FldCaption() ?></span></td>
+		<td data-name="WifiPasswd"<?php echo $parametros->WifiPasswd->CellAttributes() ?>>
+<span id="el_parametros_WifiPasswd">
+<span<?php echo $parametros->WifiPasswd->ViewAttributes() ?>>
+<?php echo $parametros->WifiPasswd->ViewValue ?></span>
 </span>
 </td>
 	</tr>

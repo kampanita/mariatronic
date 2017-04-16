@@ -317,7 +317,7 @@ Page_Rendering();
 
     include('abre_conexion.php');
 
-    $query = "select * from tempe ORDER BY id DESC LIMIT 1";
+    $query = "select * from tempe ORDER BY fecha DESC,hora desc LIMIT 1";
     $result = $conexion_db->query($query);
     while ($registro = $result->fetch_array(MYSQLI_ASSOC))
      {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ew-language date="2017/4/11" version="12.0.0" id="en" name="English" desc="English" author="e.World Technology Ltd.">
+<ew-language date="2017/4/16" version="12.0.0" id="en" name="English" desc="English" author="e.World Technology Ltd.">
 	<locale>
 		<phrase id="locale" value=""/><!-- *** system locale for this language -->
 		<phrase id="use_system_locale" value="1"/><!-- *** change to "0" to disable system locale and use the following settings *** -->
@@ -446,6 +446,8 @@
 </menu>
 <menu id="2"><phrase id="menutext" value="Historico Capturas"/>
 </menu>
+<menu id="7"><phrase id="menutext" value="Ip External actual"/>
+</menu>
 <menu id="6"><phrase id="menutext" value="Mantenimiento Params"/>
 </menu>
 <table id="tempe"><phrase id="tblcaption" value="tempe"/>
@@ -537,6 +539,20 @@
 </field>
 <field id="hum_max"><phrase id="fldcaption" value="hum max"/>
 </field>
+<field id="dnshost"><phrase id="fldcaption" value="Dns Host"/>
+</field>
+<field id="dnsuser"><phrase id="fldcaption" value="Dns User"/>
+</field>
+<field id="dnspasswd"><phrase id="fldcaption" value="Dns Passwd"/>
+</field>
+<field id="dnsurl_update"><phrase id="fldcaption" value="Dns Url Update"/>
+</field>
+<field id="wifissid"><phrase id="fldcaption" value="Wifi SSID"/>
+</field>
+<field id="wifipasswd"><phrase id="fldcaption" value="Wifi Passwd"/>
+</field>
+</table>
+<table id="ip_php"><phrase id="tblcaption" value="Ip External actual"/>
 </table>
 </project>
 </ew-language>

@@ -10,7 +10,7 @@
 	<div id="ewFooterRow" class="ewFooterRow">	
 		<div class="ewFooterText">
 			<!--<?php echo $Language->ProjectPhrase("FooterText") ?> -->
-			<h5>© CopyRight Kepa 2017</h5>
+			<h5>© CopyRight Kepa 2017 - All Rights reserved</h5>
 			
 			</div>
 		<!-- Place other links, for example, disclaimer, here -->		

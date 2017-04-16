@@ -323,9 +323,9 @@ Page_Rendering();
      {
      
 
-     if ($registro['maqcale']==1)  { $maqcale = 'On'; } else {$maqcale='Off'; }	
-     if ($registro['maqhum']==1)  { $maqhum = 'On'; } else {$maqhum='Off'; }	
-     if ($registro['maqcale']==1)  { $maqdesh = 'On'; } else {$maqdesh='Off'; }	
+     if ($registro['maqcale']==1)  { $maqcale = "<td><span class='btn btn-success'/>On</td>"; } else {$maqcale="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
+     if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
      echo "
                 <td>".$registro['fecha']."</td>
                 <td>".$registro['hora']."</td>
@@ -357,9 +357,9 @@ echo "
 
                 <td>".$registro['co2ppm']."</td>
                 <td>".$registro['higromet']."</td>
-                <td><span class='btn btn-success'/>".$maqcale."</td>
-                <td><span class='btn btn-success'/>".$maqhum."</td>
-                <td><span class='btn btn-success'/>".$maqdesh."</td>
+                ".$maqcale."
+                ".$maqhum."
+                ".$maqdesh."
       ";
       }
 ?>

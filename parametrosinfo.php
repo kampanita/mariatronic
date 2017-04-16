@@ -16,6 +16,12 @@ class cparametros extends cTable {
 	var $horas_floracion;
 	var $hum_min;
 	var $hum_max;
+	var $DnsHost;
+	var $DnsUser;
+	var $DnsPasswd;
+	var $DnsUrl_Update;
+	var $WifiSSID;
+	var $WifiPasswd;
 
 	//
 	// Table class constructor
@@ -91,6 +97,30 @@ class cparametros extends cTable {
 		$this->hum_max = new cField('parametros', 'parametros', 'x_hum_max', 'hum_max', '`hum_max`', '`hum_max`', 3, -1, FALSE, '`hum_max`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
 		$this->hum_max->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['hum_max'] = &$this->hum_max;
+
+		// DnsHost
+		$this->DnsHost = new cField('parametros', 'parametros', 'x_DnsHost', 'DnsHost', '`DnsHost`', '`DnsHost`', 200, -1, FALSE, '`DnsHost`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['DnsHost'] = &$this->DnsHost;
+
+		// DnsUser
+		$this->DnsUser = new cField('parametros', 'parametros', 'x_DnsUser', 'DnsUser', '`DnsUser`', '`DnsUser`', 200, -1, FALSE, '`DnsUser`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['DnsUser'] = &$this->DnsUser;
+
+		// DnsPasswd
+		$this->DnsPasswd = new cField('parametros', 'parametros', 'x_DnsPasswd', 'DnsPasswd', '`DnsPasswd`', '`DnsPasswd`', 200, -1, FALSE, '`DnsPasswd`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['DnsPasswd'] = &$this->DnsPasswd;
+
+		// DnsUrl_Update
+		$this->DnsUrl_Update = new cField('parametros', 'parametros', 'x_DnsUrl_Update', 'DnsUrl_Update', '`DnsUrl_Update`', '`DnsUrl_Update`', 200, -1, FALSE, '`DnsUrl_Update`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['DnsUrl_Update'] = &$this->DnsUrl_Update;
+
+		// WifiSSID
+		$this->WifiSSID = new cField('parametros', 'parametros', 'x_WifiSSID', 'WifiSSID', '`WifiSSID`', '`WifiSSID`', 200, -1, FALSE, '`WifiSSID`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['WifiSSID'] = &$this->WifiSSID;
+
+		// WifiPasswd
+		$this->WifiPasswd = new cField('parametros', 'parametros', 'x_WifiPasswd', 'WifiPasswd', '`WifiPasswd`', '`WifiPasswd`', 200, -1, FALSE, '`WifiPasswd`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->fields['WifiPasswd'] = &$this->WifiPasswd;
 	}
 
 	// Multiple column sort
@@ -580,6 +610,12 @@ class cparametros extends cTable {
 		$this->horas_floracion->setDbValue($rs->fields('horas_floracion'));
 		$this->hum_min->setDbValue($rs->fields('hum_min'));
 		$this->hum_max->setDbValue($rs->fields('hum_max'));
+		$this->DnsHost->setDbValue($rs->fields('DnsHost'));
+		$this->DnsUser->setDbValue($rs->fields('DnsUser'));
+		$this->DnsPasswd->setDbValue($rs->fields('DnsPasswd'));
+		$this->DnsUrl_Update->setDbValue($rs->fields('DnsUrl_Update'));
+		$this->WifiSSID->setDbValue($rs->fields('WifiSSID'));
+		$this->WifiPasswd->setDbValue($rs->fields('WifiPasswd'));
 	}
 
 	// Render list row values
@@ -599,6 +635,12 @@ class cparametros extends cTable {
 		// horas_floracion
 		// hum_min
 		// hum_max
+		// DnsHost
+		// DnsUser
+		// DnsPasswd
+		// DnsUrl_Update
+		// WifiSSID
+		// WifiPasswd
 		// id
 
 		$this->id->ViewValue = $this->id->CurrentValue;
@@ -635,6 +677,30 @@ class cparametros extends cTable {
 		// hum_max
 		$this->hum_max->ViewValue = $this->hum_max->CurrentValue;
 		$this->hum_max->ViewCustomAttributes = "";
+
+		// DnsHost
+		$this->DnsHost->ViewValue = $this->DnsHost->CurrentValue;
+		$this->DnsHost->ViewCustomAttributes = "";
+
+		// DnsUser
+		$this->DnsUser->ViewValue = $this->DnsUser->CurrentValue;
+		$this->DnsUser->ViewCustomAttributes = "";
+
+		// DnsPasswd
+		$this->DnsPasswd->ViewValue = $this->DnsPasswd->CurrentValue;
+		$this->DnsPasswd->ViewCustomAttributes = "";
+
+		// DnsUrl_Update
+		$this->DnsUrl_Update->ViewValue = $this->DnsUrl_Update->CurrentValue;
+		$this->DnsUrl_Update->ViewCustomAttributes = "";
+
+		// WifiSSID
+		$this->WifiSSID->ViewValue = $this->WifiSSID->CurrentValue;
+		$this->WifiSSID->ViewCustomAttributes = "";
+
+		// WifiPasswd
+		$this->WifiPasswd->ViewValue = $this->WifiPasswd->CurrentValue;
+		$this->WifiPasswd->ViewCustomAttributes = "";
 
 		// id
 		$this->id->LinkCustomAttributes = "";
@@ -680,6 +746,36 @@ class cparametros extends cTable {
 		$this->hum_max->LinkCustomAttributes = "";
 		$this->hum_max->HrefValue = "";
 		$this->hum_max->TooltipValue = "";
+
+		// DnsHost
+		$this->DnsHost->LinkCustomAttributes = "";
+		$this->DnsHost->HrefValue = "";
+		$this->DnsHost->TooltipValue = "";
+
+		// DnsUser
+		$this->DnsUser->LinkCustomAttributes = "";
+		$this->DnsUser->HrefValue = "";
+		$this->DnsUser->TooltipValue = "";
+
+		// DnsPasswd
+		$this->DnsPasswd->LinkCustomAttributes = "";
+		$this->DnsPasswd->HrefValue = "";
+		$this->DnsPasswd->TooltipValue = "";
+
+		// DnsUrl_Update
+		$this->DnsUrl_Update->LinkCustomAttributes = "";
+		$this->DnsUrl_Update->HrefValue = "";
+		$this->DnsUrl_Update->TooltipValue = "";
+
+		// WifiSSID
+		$this->WifiSSID->LinkCustomAttributes = "";
+		$this->WifiSSID->HrefValue = "";
+		$this->WifiSSID->TooltipValue = "";
+
+		// WifiPasswd
+		$this->WifiPasswd->LinkCustomAttributes = "";
+		$this->WifiPasswd->HrefValue = "";
+		$this->WifiPasswd->TooltipValue = "";
 
 		// Call Row Rendered event
 		$this->Row_Rendered();
@@ -748,6 +844,42 @@ class cparametros extends cTable {
 		$this->hum_max->EditValue = $this->hum_max->CurrentValue;
 		$this->hum_max->PlaceHolder = ew_RemoveHtml($this->hum_max->FldCaption());
 
+		// DnsHost
+		$this->DnsHost->EditAttrs["class"] = "form-control";
+		$this->DnsHost->EditCustomAttributes = "";
+		$this->DnsHost->EditValue = $this->DnsHost->CurrentValue;
+		$this->DnsHost->PlaceHolder = ew_RemoveHtml($this->DnsHost->FldCaption());
+
+		// DnsUser
+		$this->DnsUser->EditAttrs["class"] = "form-control";
+		$this->DnsUser->EditCustomAttributes = "";
+		$this->DnsUser->EditValue = $this->DnsUser->CurrentValue;
+		$this->DnsUser->PlaceHolder = ew_RemoveHtml($this->DnsUser->FldCaption());
+
+		// DnsPasswd
+		$this->DnsPasswd->EditAttrs["class"] = "form-control";
+		$this->DnsPasswd->EditCustomAttributes = "";
+		$this->DnsPasswd->EditValue = $this->DnsPasswd->CurrentValue;
+		$this->DnsPasswd->PlaceHolder = ew_RemoveHtml($this->DnsPasswd->FldCaption());
+
+		// DnsUrl_Update
+		$this->DnsUrl_Update->EditAttrs["class"] = "form-control";
+		$this->DnsUrl_Update->EditCustomAttributes = "";
+		$this->DnsUrl_Update->EditValue = $this->DnsUrl_Update->CurrentValue;
+		$this->DnsUrl_Update->PlaceHolder = ew_RemoveHtml($this->DnsUrl_Update->FldCaption());
+
+		// WifiSSID
+		$this->WifiSSID->EditAttrs["class"] = "form-control";
+		$this->WifiSSID->EditCustomAttributes = "";
+		$this->WifiSSID->EditValue = $this->WifiSSID->CurrentValue;
+		$this->WifiSSID->PlaceHolder = ew_RemoveHtml($this->WifiSSID->FldCaption());
+
+		// WifiPasswd
+		$this->WifiPasswd->EditAttrs["class"] = "form-control";
+		$this->WifiPasswd->EditCustomAttributes = "";
+		$this->WifiPasswd->EditValue = $this->WifiPasswd->CurrentValue;
+		$this->WifiPasswd->PlaceHolder = ew_RemoveHtml($this->WifiPasswd->FldCaption());
+
 		// Call Row Rendered event
 		$this->Row_Rendered();
 	}
@@ -784,6 +916,12 @@ class cparametros extends cTable {
 					if ($this->horas_floracion->Exportable) $Doc->ExportCaption($this->horas_floracion);
 					if ($this->hum_min->Exportable) $Doc->ExportCaption($this->hum_min);
 					if ($this->hum_max->Exportable) $Doc->ExportCaption($this->hum_max);
+					if ($this->DnsHost->Exportable) $Doc->ExportCaption($this->DnsHost);
+					if ($this->DnsUser->Exportable) $Doc->ExportCaption($this->DnsUser);
+					if ($this->DnsPasswd->Exportable) $Doc->ExportCaption($this->DnsPasswd);
+					if ($this->DnsUrl_Update->Exportable) $Doc->ExportCaption($this->DnsUrl_Update);
+					if ($this->WifiSSID->Exportable) $Doc->ExportCaption($this->WifiSSID);
+					if ($this->WifiPasswd->Exportable) $Doc->ExportCaption($this->WifiPasswd);
 				} else {
 					if ($this->id->Exportable) $Doc->ExportCaption($this->id);
 					if ($this->temp_min->Exportable) $Doc->ExportCaption($this->temp_min);
@@ -794,6 +932,12 @@ class cparametros extends cTable {
 					if ($this->horas_floracion->Exportable) $Doc->ExportCaption($this->horas_floracion);
 					if ($this->hum_min->Exportable) $Doc->ExportCaption($this->hum_min);
 					if ($this->hum_max->Exportable) $Doc->ExportCaption($this->hum_max);
+					if ($this->DnsHost->Exportable) $Doc->ExportCaption($this->DnsHost);
+					if ($this->DnsUser->Exportable) $Doc->ExportCaption($this->DnsUser);
+					if ($this->DnsPasswd->Exportable) $Doc->ExportCaption($this->DnsPasswd);
+					if ($this->DnsUrl_Update->Exportable) $Doc->ExportCaption($this->DnsUrl_Update);
+					if ($this->WifiSSID->Exportable) $Doc->ExportCaption($this->WifiSSID);
+					if ($this->WifiPasswd->Exportable) $Doc->ExportCaption($this->WifiPasswd);
 				}
 				$Doc->EndExportRow();
 			}
@@ -834,6 +978,12 @@ class cparametros extends cTable {
 						if ($this->horas_floracion->Exportable) $Doc->ExportField($this->horas_floracion);
 						if ($this->hum_min->Exportable) $Doc->ExportField($this->hum_min);
 						if ($this->hum_max->Exportable) $Doc->ExportField($this->hum_max);
+						if ($this->DnsHost->Exportable) $Doc->ExportField($this->DnsHost);
+						if ($this->DnsUser->Exportable) $Doc->ExportField($this->DnsUser);
+						if ($this->DnsPasswd->Exportable) $Doc->ExportField($this->DnsPasswd);
+						if ($this->DnsUrl_Update->Exportable) $Doc->ExportField($this->DnsUrl_Update);
+						if ($this->WifiSSID->Exportable) $Doc->ExportField($this->WifiSSID);
+						if ($this->WifiPasswd->Exportable) $Doc->ExportField($this->WifiPasswd);
 					} else {
 						if ($this->id->Exportable) $Doc->ExportField($this->id);
 						if ($this->temp_min->Exportable) $Doc->ExportField($this->temp_min);
@@ -844,6 +994,12 @@ class cparametros extends cTable {
 						if ($this->horas_floracion->Exportable) $Doc->ExportField($this->horas_floracion);
 						if ($this->hum_min->Exportable) $Doc->ExportField($this->hum_min);
 						if ($this->hum_max->Exportable) $Doc->ExportField($this->hum_max);
+						if ($this->DnsHost->Exportable) $Doc->ExportField($this->DnsHost);
+						if ($this->DnsUser->Exportable) $Doc->ExportField($this->DnsUser);
+						if ($this->DnsPasswd->Exportable) $Doc->ExportField($this->DnsPasswd);
+						if ($this->DnsUrl_Update->Exportable) $Doc->ExportField($this->DnsUrl_Update);
+						if ($this->WifiSSID->Exportable) $Doc->ExportField($this->WifiSSID);
+						if ($this->WifiPasswd->Exportable) $Doc->ExportField($this->WifiPasswd);
 					}
 					$Doc->EndExportRow();
 				}

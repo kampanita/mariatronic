@@ -8,7 +8,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-date_default_timezone_set('Europe/Madrid');
+//date_default_timezone_set('Europe/Madrid');
 
 
 //
@@ -338,7 +338,7 @@ Page_Rendering();
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: @ '.date('d-m-Y H:i:s',time()); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> 
+     <h3> <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> </h3>
   </div>
   </body>
 </html>

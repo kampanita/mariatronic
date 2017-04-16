@@ -315,10 +315,10 @@ Page_Rendering();
           title: 'Temperature at time',
           subtitle: 'in ºCelsius'
         },
-        width: 1800,	
+        width: 1400,	
         height: 600,
         lineWidth: 1,
-        colors: ['green','red'],
+         colors: ['green','red','blue','yellow','brown'],
         axes: {
           x: {
             0: {side: 'top'}
@@ -338,7 +338,7 @@ Page_Rendering();
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: @ '.date('d-m-Y H:i:s',time()); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-    <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> 
+     <h3> <div><a href="grafico2.php"><span class="label label-success">por horas</span></a></div> </h3>
   </div>
   </body>
 </html>

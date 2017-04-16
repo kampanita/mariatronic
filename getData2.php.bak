@@ -3,13 +3,20 @@
     include('abre_conexion.php');
 
      $query = "SELECT 
-                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i:%s')) as fecha, avg(temp) as temp ,avg(hum) as hum
+                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%H:%i')) as fecha, avg(temp) as temp ,avg(hum) as hum, avg(co2ppm) as co2ppm, avg(higromet) as higromet, avg(luz) as luz
                FROM tempe 
       where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
-      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i:%s'))
+      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i'))
       order BY id asc,fecha asc, hora asc
       ";
-    
+     
+      $query = "SELECT 
+                   concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%H:%i')) as fecha, avg(temp) as temp ,avg(hum) as hum
+               FROM tempe 
+      where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
+      group by concat(DATE_FORMAT(fecha,'%Y-%m-%d') ,' ' ,DATE_FORMAT(hora,'%h:%i'))
+      order BY id asc,fecha asc, hora asc
+      ";
     $result = mysqli_query($conexion_db,$query);
    
    
@@ -31,7 +38,11 @@ $table['cols'] = array(
     array('label' => 'fecha', 'type' => 'string'),
    	array('label' => 'temp', 'type' => 'number'),
    	array('label' => 'hum', 'type' => 'number')
-   	);
+ #  	,
+ #  	array('label' => 'co2ppm', 'type' => 'number'),
+ #  	array('label' => 'higromet', 'type' => 'number'),
+ #  	array('label' => 'luz', 'type' => 'number')
+);
 
 $rows = array();
 while($r = mysqli_fetch_assoc($result)) {
@@ -40,10 +51,13 @@ while($r = mysqli_fetch_assoc($result)) {
 	
 	$temp[] = array('v' => (string)$r['fecha']);
 	$temp[] = array('v' =>  (float)$r['temp']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
-  $temp[] = array('v' =>  (float)$r['hum']);	
-	
+	$temp[] = array('v' =>  (float)$r['hum']);
+  $temp[] = array('v' =>  (float)$r['co2ppm']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
+	$temp[] = array('v' =>  (float)$r['higromet']);
+  $temp[] = array('v' =>  (float)$r['luz']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
+
 	// insert the temp array into $rows
-   $rows[] = array('c' => $temp);
+    $rows[] = array('c' => $temp);
 }
 
 // populate the table with rows of data

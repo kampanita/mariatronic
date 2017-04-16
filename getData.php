@@ -2,26 +2,23 @@
    
     
     include('abre_conexion.php');
-    if ($_GET["tipo"]=1) 
-    { 
+  
      $query = "SELECT 
-                   DATE_FORMAT(fecha,'%d-%m-%Y') as fecha, avg(temp) as temp,avg(hum) as hum 
+                   DATE_FORMAT(fecha,'%d-%m-%Y') as fecha, avg(temp) as temp, avg(hum) as hum ,avg(co2ppm) as co2ppm, avg(higromet) as higromet, avg(luz) as luz
                FROM tempe 
       
       group by DATE_FORMAT(fecha,'%d-%m-%Y')
       order BY fecha asc,hora asc
       ";
-    }
-   else 
-   { 
+  
      $query = "SELECT 
-                   DATE_FORMAT(hora,'%h:%i:%s') as fecha, avg(temp) as temp 
+                   DATE_FORMAT(fecha,'%d-%m-%Y') as fecha, avg(temp) as temp, avg(hum) as hum 
                FROM tempe 
       
-      group by DATE_FORMAT(hora,'%h:%i:%s')
+      group by DATE_FORMAT(fecha,'%d-%m-%Y')
       order BY fecha asc,hora asc
       ";
-    }
+  
    //where date_format(fecha,'%Y%m%d') = date_format(now(),'%Y%m%d')
     $result = mysqli_query($conexion_db,$query);
    
@@ -44,6 +41,10 @@ $table['cols'] = array(
     array('label' => 'fecha', 'type' => 'string'),
    	array('label' => 'temp', 'type' => 'number'),
    	array('label' => 'hum', 'type' => 'number')
+   	#,
+   	#array('label' => 'co2ppm', 'type' => 'number'),
+   	#array('label' => 'higromet', 'type' => 'number'),
+   	#array('label' => 'luz', 'type' => 'number')
 );
 
 $rows = array();
@@ -54,6 +55,9 @@ while($r = mysqli_fetch_assoc($result)) {
 	$temp[] = array('v' => (string)$r['fecha']);
 	$temp[] = array('v' =>  (float)$r['temp']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
 	$temp[] = array('v' =>  (float)$r['hum']);
+  #$temp[] = array('v' =>  (float)$r['co2ppm']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
+	#$temp[] = array('v' =>  (float)$r['higromet']);
+  #$temp[] = array('v' =>  (float)$r['luz']); // typecast all numbers to the appropriate type (int or float) as needed - otherwise they are input as strings
 
 	// insert the temp array into $rows
     $rows[] = array('c' => $temp);

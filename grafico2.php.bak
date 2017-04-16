@@ -8,7 +8,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "phpfn12.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-date_default_timezone_set('Europe/Madrid');
+//
 //
 // Page class
 //
@@ -24,10 +24,10 @@ class cgrafico_php {
 	var $ProjectID = "{524C14CD-A0E3-4083-AF86-06203077AB82}";
 
 	// Table name
-	var $TableName = 'grafico.php';
+	var $TableName = 'grafico2.php';
 
 	// Page object name
-	var $PageObjName = 'grafico_php';
+	var $PageObjName = 'grafico2_php';
 
 	// Page name
 	function PageName() {
@@ -189,7 +189,7 @@ class cgrafico_php {
 
 		// Table name (for backward compatibility)
 		if (!defined("EW_TABLE_NAME"))
-			define("EW_TABLE_NAME", 'grafico.php', TRUE);
+			define("EW_TABLE_NAME", 'grafico2.php', TRUE);
 
 		// Start timer
 		if (!isset($GLOBALS["gTimer"])) $GLOBALS["gTimer"] = new cTimer();
@@ -260,7 +260,7 @@ class cgrafico_php {
 		global $Breadcrumb;
 		$Breadcrumb = new cBreadcrumb();
 		$url = substr(ew_CurrentUrl(), strrpos(ew_CurrentUrl(), "/")+1);
-		$Breadcrumb->Add("custom", "grafico_php", $url, "", "grafico_php", TRUE);
+		$Breadcrumb->Add("custom", "grafico2_php", $url, "", "grafico2_php", TRUE);
 	}
 }
 ?>
@@ -268,13 +268,13 @@ class cgrafico_php {
 <?php
 
 // Create page object
-if (!isset($grafico_php)) $grafico_php = new cgrafico_php();
+if (!isset($grafico2_php)) $grafico2_php = new cgrafico_php();
 
 // Page init
-$grafico_php->Page_Init();
+$grafico2_php->Page_Init();
 
 // Page main
-$grafico_php->Page_Main();
+$grafico2_php->Page_Main();
 
 // Global Page Rendering event (in userfn*.php)
 Page_Rendering();
@@ -316,7 +316,7 @@ Page_Rendering();
         width: 1800,	
         height: 600,
         lineWidth: 1,
-        colors: ['green','red'],
+        colors: ['green','red','blue','yellow','brown'],
         axes: {
           x: {
             0: {side: 'top'}
@@ -336,7 +336,7 @@ Page_Rendering();
     <div><h3><span class="label label-success"><?php echo 'Fecha actual: '.date('d-m-Y H:i:s'); ?></span></h3	></div>
     
     <div id="chart_div"></div>
-     <div><a href="grafico.php"><span class="label label-success">HOY</span></a></div>
+     <h2>	<div><a href="grafico.php"><span class="label label-success">HOY</span></a></div></h2>
   </div>
   </body>
 </html>
