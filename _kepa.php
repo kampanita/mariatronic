@@ -348,7 +348,7 @@ Page_Rendering();
     </tr>
     </thead>
       <tr>
-                <td>".$registro['luz']."</td>
+                <td>".$luz."</td>
                 <td>".$registro['co2ppm']."</td>
                 <td>".$registro['higromet']."</td>
     
