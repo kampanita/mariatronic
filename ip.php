@@ -319,11 +319,11 @@ Page_Rendering();
 
 <?php 
    $web_page = "http://iptools.bizhat.com/ipv4.php";
-   print( "<div class='col-md-3'><h4 class='panel panel-danger'> La ip externa actual es: <br><br>");
+   print( "<div class='col-md-4'><h4 class='panel panel-danger'><br><center>La ip externa actual es: <span class='label label-danger'>");
    $res= getHtml($web_page,null);
    print ' '.$res;
    #include($web_page);
-   print ("<br><br></h4></div>");
+   print ("</spash></center><br><br></h4></div>");
 ?>  
 </div>
 
