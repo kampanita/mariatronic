@@ -29,7 +29,7 @@ define("EW_CONFIG_FILE_FOLDER", EW_PROJECT_NAME . "", TRUE); // Config file name
 define("EW_PROJECT_ID", "{524C14CD-A0E3-4083-AF86-06203077AB82}", TRUE); // Project ID (GUID)
 $EW_RELATED_PROJECT_ID = "";
 $EW_RELATED_LANGUAGE_FOLDER = "";
-define("EW_RANDOM_KEY", 'GnAv6JybBzSm2x5D', TRUE); // Random key for encryption
+define("EW_RANDOM_KEY", 'hfONs16TPQ1ZSC3l', TRUE); // Random key for encryption
 define("EW_PROJECT_STYLESHEET_FILENAME", "phpcss/PROYECTO_BUENO_USAR_EL_12.css", TRUE); // Project stylesheet file name
 define("EW_CHARSET", "iso-8859-15", TRUE); // Project charset
 define("EW_EMAIL_CHARSET", EW_CHARSET, TRUE); // Email charset
@@ -96,7 +96,7 @@ define("EW_MYSQL_CHARSET", "", TRUE);
  * Otherwise, existing users will not be able to login. MD5 hash is
  * irreversible, password will be reset during password recovery.
  */
-define("EW_ENCRYPTED_PASSWORD", FALSE, TRUE); // Use encrypted password
+define("EW_ENCRYPTED_PASSWORD", TRUE, TRUE); // Use encrypted password
 define("EW_CASE_SENSITIVE_PASSWORD", FALSE, TRUE); // Case-sensitive password
 
 /**
@@ -250,8 +250,14 @@ define("EW_USE_SUBQUERY_FOR_MASTER_USER_ID", FALSE, TRUE);
 define("EW_USER_ID_ALLOW", 104, TRUE);
 
 // User table filters
-// User Profile Constants
+define("EW_USER_TABLE_DBID", "DB", TRUE);
+define("EW_USER_TABLE", "`usuarios`", TRUE);
+define("EW_USER_NAME_FILTER", "(`usuario` = '%u')", TRUE);
+define("EW_USER_ID_FILTER", "", TRUE);
+define("EW_USER_EMAIL_FILTER", "", TRUE);
+define("EW_USER_ACTIVATE_FILTER", "", TRUE);
 
+// User Profile Constants
 define("EW_USER_PROFILE_KEY_SEPARATOR", "", TRUE);
 define("EW_USER_PROFILE_FIELD_SEPARATOR", "", TRUE);
 define("EW_USER_PROFILE_SESSION_ID", "SessionID", TRUE);

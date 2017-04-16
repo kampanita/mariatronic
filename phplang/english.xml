@@ -436,19 +436,27 @@
 		<phrase id="or" value="or"/>
 	</global>
 	<project><phrase id="footertext" value="&amp;copy;2017 e.World Technology Ltd. All rights reserved."/>
-<menu id="1"><phrase id="menutext" value="tempe"/>
-</menu>
 <menu id="3"><phrase id="menutext" value="Estado Actual"/>
+</menu>
+<menu id="17"><phrase id="menutext" value="Gráficas"/>
 </menu>
 <menu id="5"><phrase id="menutext" value="Grafica diaria"/>
 </menu>
-<menu id="4"><phrase id="menutext" value="Camara Web"/>
+<menu id="18"><phrase id="menutext" value="Gráfica horaria"/>
 </menu>
 <menu id="2"><phrase id="menutext" value="Historico Capturas"/>
 </menu>
+<menu id="16"><phrase id="menutext" value="Mantenimientos"/>
+</menu>
+<menu id="6"><phrase id="menutext" value="Parametros"/>
+</menu>
+<menu id="8"><phrase id="menutext" value="Usuarios"/>
+</menu>
+<menu id="1"><phrase id="menutext" value="Tabla de Registro"/>
+</menu>
 <menu id="7"><phrase id="menutext" value="Ip External actual"/>
 </menu>
-<menu id="6"><phrase id="menutext" value="Mantenimiento Params"/>
+<menu id="4"><phrase id="menutext" value="Camara Web"/>
 </menu>
 <table id="tempe"><phrase id="tblcaption" value="tempe"/>
 <field id="id"><phrase id="fldcaption" value="id"/>
@@ -553,6 +561,12 @@
 </field>
 </table>
 <table id="ip_php"><phrase id="tblcaption" value="Ip External actual"/>
+</table>
+<table id="usuarios"><phrase id="tblcaption" value="usuarios"/>
+<field id="usuario"><phrase id="fldcaption" value="usuario"/>
+</field>
+<field id="passwd"><phrase id="fldcaption" value="passwd"/>
+</field>
 </table>
 </project>
 </ew-language>

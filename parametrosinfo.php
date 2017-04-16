@@ -79,12 +79,12 @@ class cparametros extends cTable {
 		$this->fields['co_max'] = &$this->co_max;
 
 		// horas_crecimiento
-		$this->horas_crecimiento = new cField('parametros', 'parametros', 'x_horas_crecimiento', 'horas_crecimiento', '`horas_crecimiento`', '`horas_crecimiento`', 3, -1, FALSE, '`horas_crecimiento`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->horas_crecimiento = new cField('parametros', 'parametros', 'x_horas_crecimiento', 'horas_crecimiento', '`horas_crecimiento`', '`horas_crecimiento`', 200, -1, FALSE, '`horas_crecimiento`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
 		$this->horas_crecimiento->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['horas_crecimiento'] = &$this->horas_crecimiento;
 
 		// horas_floracion
-		$this->horas_floracion = new cField('parametros', 'parametros', 'x_horas_floracion', 'horas_floracion', '`horas_floracion`', '`horas_floracion`', 3, -1, FALSE, '`horas_floracion`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
+		$this->horas_floracion = new cField('parametros', 'parametros', 'x_horas_floracion', 'horas_floracion', '`horas_floracion`', '`horas_floracion`', 200, -1, FALSE, '`horas_floracion`', FALSE, FALSE, FALSE, 'FORMATTED TEXT', 'TEXT');
 		$this->horas_floracion->FldDefaultErrMsg = $Language->Phrase("IncorrectInteger");
 		$this->fields['horas_floracion'] = &$this->horas_floracion;
 

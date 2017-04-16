@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('Europe/Madrid');
+
 /**
  * PHPMaker Common classes and functions
  * (C) 2002-2015 e.World Technology Limited. All rights reserved.
@@ -3541,6 +3541,7 @@ class cAdvancedSecurity {
 	// Validate user
 	function ValidateUser(&$usr, &$pwd, $autologin, $encrypted = FALSE) {
 		global $Language;
+		global $UserTable, $UserTableConn;
 		$ValidateUser = FALSE;
 		$CustomValidateUser = FALSE;
 
@@ -3567,6 +3568,31 @@ class cAdvancedSecurity {
 				$_SESSION[EW_SESSION_STATUS] = "login";
 				$_SESSION[EW_SESSION_SYS_ADMIN] = 1; // System Administrator
 				$this->setCurrentUserName($Language->Phrase("UserAdministrator")); // Load user name
+			}
+		}
+
+		// Check other users
+		if (!$ValidateUser) {
+			$sFilter = str_replace("%u", ew_AdjustSql($usr, EW_USER_TABLE_DBID), EW_USER_NAME_FILTER);
+
+			// Set up filter (SQL WHERE clause) and get return SQL
+			// SQL constructor in <UserTable> class, <UserTable>info.php
+
+			$sSql = $UserTable->GetSQL($sFilter, "");
+			if ($rs = $UserTableConn->Execute($sSql)) {
+				if (!$rs->EOF) {
+					$ValidateUser = $CustomValidateUser || ew_ComparePassword($rs->fields('passwd'), $pwd, $encrypted);
+					if ($ValidateUser) {
+						$_SESSION[EW_SESSION_STATUS] = "login";
+						$_SESSION[EW_SESSION_SYS_ADMIN] = 0; // Non System Administrator
+						$this->setCurrentUserName($rs->fields('usuario')); // Load user name
+
+						// Call User Validated event
+						$row = $rs->fields;
+						$ValidateUser = $this->User_Validated($row) !== FALSE; // For backward compatibility
+					}
+				}
+				$rs->Close();
 			}
 		}
 		if ($CustomValidateUser)
@@ -3640,6 +3666,7 @@ class cAdvancedSecurity {
 	// Get current user privilege
 	function CurrentUserLevelPriv($TableName) {
 		if ($this->IsLoggedIn()) {
+			return 127;
 		} else { // Anonymous
 			return $this->GetUserLevelPrivEx($TableName, -2);
 		}

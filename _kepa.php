@@ -320,8 +320,12 @@ Page_Rendering();
      if ($registro['maqcale']==1)  { $maqcale = "<td><span class='btn btn-success'/>On</td>"; } else {$maqcale="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqhum']==1)   { $maqhum = "<td><span class='btn btn-success'/>On</td>"; } else {$maqhum="<td><span class='btn btn-danger'/>Off</td>"; }	
      if ($registro['maqdesh']==1)   { $maqdesh = "<td><span class='btn btn-success'/>On</td>"; } else {$maqdesh="<td><span class='btn btn-danger'/>Off</td>"; }	
-     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento ".$parametros['horas_crecimiento']."</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion ".$parametros['horas_floracion']."</td>"; }	
+     
+     if ($registro['periodo']==1)   { $periodo = "<td><span class='btn btn-info'/>Crecimiento ".$parametros['horas_crecimiento']."</td>"; } else {$periodo="<td><span class='btn btn-warning'/>Floracion".$parametros['horas_floracion']."</td>"; }	
   
+     if ($registro['horasluz']==1)   { $horas = "<td><span class='btn btn-info'/>18/6</td>"; } else {$horas="<td><span class='btn btn-warning'/>12/12</td>"; }	
+  
+     
      if ($registro['luz']>=400)   { $luz = "<td><span class='btn btn-success'/>On ( ".$registro['luz']." )</td>"; } else {$luz="<td><span class='btn btn-danger'/>Off ( ".$registro['luz']." )</td>"; }	
     
      echo "
@@ -347,7 +351,7 @@ Page_Rendering();
       <th>Luz</th>
       <th>CO2</th>
       <th>Riego</th>
-      <th>-</th>
+      <th>Horas Luz</th>
     </tr>
     </thead>
       <tr>
@@ -355,7 +359,7 @@ Page_Rendering();
                 ".$luz."
                 <td>".$registro['co2ppm']."</td>
                 <td>".$registro['higromet']."</td>
-                <td>-</td>
+                ".$horas."
     
     </tr>
     <thead class='thead-inverse'>

@@ -5,6 +5,7 @@ ob_start(); // Turn on output buffering
 <?php include_once "ewcfg12.php" ?>
 <?php include_once ((EW_USE_ADODB) ? "adodb5/adodb.inc.php" : "ewmysql12.php") ?>
 <?php include_once "phpfn12.php" ?>
+<?php include_once "usuariosinfo.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
 
@@ -173,11 +174,13 @@ class clogout {
 	//
 	function __construct() {
 		global $conn, $Language;
+		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
 		$this->TokenTimeout = ew_SessionTimeoutTime();
 
 		// Language object
 		if (!isset($Language)) $Language = new cLanguage();
+		if (!isset($GLOBALS["usuarios"])) $GLOBALS["usuarios"] = new cusuarios();
 
 		// Page ID
 		if (!defined("EW_PAGE_ID"))
@@ -188,6 +191,12 @@ class clogout {
 
 		// Open connection
 		if (!isset($conn)) $conn = ew_Connect();
+
+		// User table object (usuarios)
+		if (!isset($UserTable)) {
+			$UserTable = new cusuarios();
+			$UserTableConn = Conn($UserTable->DBID);
+		}
 	}
 
 	// 

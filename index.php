@@ -5,9 +5,10 @@ ob_start(); // Turn on output buffering
 <?php include_once "ewcfg12.php" ?>
 <?php include_once ((EW_USE_ADODB) ? "adodb5/adodb.inc.php" : "ewmysql12.php") ?>
 <?php include_once "phpfn12.php" ?>
+<?php include_once "usuariosinfo.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
-date_default_timezone_set('Europe/Madrid');
+
 //
 // Page class
 //
@@ -173,6 +174,7 @@ class cdefault {
 	//
 	function __construct() {
 		global $conn, $Language;
+		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
 		$this->TokenTimeout = ew_SessionTimeoutTime();
 
@@ -188,6 +190,12 @@ class cdefault {
 
 		// Open connection
 		if (!isset($conn)) $conn = ew_Connect();
+
+		// User table object (usuarios)
+		if (!isset($UserTable)) {
+			$UserTable = new cusuarios();
+			$UserTableConn = Conn($UserTable->DBID);
+		}
 	}
 
 	// 
@@ -249,16 +257,20 @@ class cdefault {
 	function Page_Main() {
 		global $Security, $Language;
 		if (!$Security->IsLoggedIn()) $Security->AutoLogin();
-		if ($Security->IsLoggedIn())
+		if ($Security->AllowList(CurrentProjectID() . '_kepa.php'))
 		$this->Page_Terminate("_kepa.php"); // Exit and go to default page
-		if ($Security->IsLoggedIn())
+		if ($Security->AllowList(CurrentProjectID() . 'view1'))
 			$this->Page_Terminate("view1list.php");
-		if ($Security->IsLoggedIn())
+		if ($Security->AllowList(CurrentProjectID() . 'camera.php'))
 			$this->Page_Terminate("camera.php");
-		if ($Security->IsLoggedIn())
+		if ($Security->AllowList(CurrentProjectID() . 'grafico.php'))
 			$this->Page_Terminate("grafico.php");
-		if ($Security->IsLoggedIn())
+		if ($Security->AllowList(CurrentProjectID() . 'parametros'))
 			$this->Page_Terminate("parametroslist.php");
+		if ($Security->AllowList(CurrentProjectID() . 'ip.php'))
+			$this->Page_Terminate("ip.php");
+		if ($Security->AllowList(CurrentProjectID() . 'usuarios'))
+			$this->Page_Terminate("usuarioslist.php");
 		if ($Security->IsLoggedIn()) {
 			$this->setFailureMessage($Language->Phrase("NoPermission") . "<br><br><a href=\"logout.php\">" . $Language->Phrase("BackToLogin") . "</a>");
 		} else {
@@ -304,7 +316,7 @@ if (!isset($default)) $default = new cdefault();
 
 // Page init
 $default->Page_Init();
-date_default_timezone_set('Europe/Madrid');
+
 // Page main
 $default->Page_Main();
 ?>

@@ -6,6 +6,7 @@ ob_start(); // Turn on output buffering
 <?php include_once ((EW_USE_ADODB) ? "adodb5/adodb.inc.php" : "ewmysql12.php") ?>
 <?php include_once "phpfn12.php" ?>
 <?php include_once "parametrosinfo.php" ?>
+<?php include_once "usuariosinfo.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
 
@@ -251,6 +252,7 @@ class cparametros_list extends cparametros {
 	//
 	function __construct() {
 		global $conn, $Language;
+		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
 		$this->TokenTimeout = ew_SessionTimeoutTime();
 
@@ -281,6 +283,9 @@ class cparametros_list extends cparametros {
 		$this->MultiDeleteUrl = "parametrosdelete.php";
 		$this->MultiUpdateUrl = "parametrosupdate.php";
 
+		// Table object (usuarios)
+		if (!isset($GLOBALS['usuarios'])) $GLOBALS['usuarios'] = new cusuarios();
+
 		// Page ID
 		if (!defined("EW_PAGE_ID"))
 			define("EW_PAGE_ID", 'list', TRUE);
@@ -294,6 +299,12 @@ class cparametros_list extends cparametros {
 
 		// Open connection
 		if (!isset($conn)) $conn = ew_Connect($this->DBID);
+
+		// User table object (usuarios)
+		if (!isset($UserTable)) {
+			$UserTable = new cusuarios();
+			$UserTableConn = Conn($UserTable->DBID);
+		}
 
 		// List options
 		$this->ListOptions = new cListOptions();
@@ -333,6 +344,9 @@ class cparametros_list extends cparametros {
 		// Security
 		$Security = new cAdvancedSecurity();
 		if (!$Security->IsLoggedIn()) $Security->AutoLogin();
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loading();
+		$Security->LoadCurrentUserLevel($this->ProjectID . $this->TableName);
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loaded();
 		if (!$Security->IsLoggedIn()) $this->Page_Terminate(ew_GetUrl("login.php"));
 
 		// Create form object
@@ -663,6 +677,8 @@ class cparametros_list extends cparametros {
 
 		// Build filter
 		$sFilter = "";
+		if (!$Security->CanList())
+			$sFilter = "(0=1)"; // Filter all records
 		ew_AddFilter($sFilter, $this->DbDetailFilter);
 		ew_AddFilter($sFilter, $this->SearchWhere);
 
@@ -708,6 +724,8 @@ class cparametros_list extends cparametros {
 	// Switch to Inline Edit mode
 	function InlineEditMode() {
 		global $Security, $Language;
+		if (!$Security->CanEdit())
+			$this->Page_Terminate("login.php"); // Go to login page
 		$bInlineEdit = TRUE;
 		if (@$_GET["id"] <> "") {
 			$this->id->setQueryStringValue($_GET["id"]);
@@ -769,6 +787,8 @@ class cparametros_list extends cparametros {
 	// Switch to Inline Add mode
 	function InlineAddMode() {
 		global $Security, $Language;
+		if (!$Security->CanAdd())
+			$this->Page_Terminate("login.php"); // Return to login page
 		if ($this->CurrentAction == "copy") {
 			if (@$_GET["id"] <> "") {
 				$this->id->setQueryStringValue($_GET["id"]);
@@ -1381,6 +1401,7 @@ class cparametros_list extends cparametros {
 	function BasicSearchWhere($Default = FALSE) {
 		global $Security;
 		$sSearchStr = "";
+		if (!$Security->CanSearch()) return "";
 		$sSearchKeyword = ($Default) ? $this->BasicSearch->KeywordDefault : $this->BasicSearch->Keyword;
 		$sSearchType = ($Default) ? $this->BasicSearch->TypeDefault : $this->BasicSearch->Type;
 		if ($sSearchKeyword <> "") {
@@ -1566,25 +1587,25 @@ class cparametros_list extends cparametros {
 		// "view"
 		$item = &$this->ListOptions->Add("view");
 		$item->CssStyle = "white-space: nowrap;";
-		$item->Visible = $Security->IsLoggedIn();
+		$item->Visible = $Security->CanView();
 		$item->OnLeft = TRUE;
 
 		// "edit"
 		$item = &$this->ListOptions->Add("edit");
 		$item->CssStyle = "white-space: nowrap;";
-		$item->Visible = $Security->IsLoggedIn();
+		$item->Visible = $Security->CanEdit();
 		$item->OnLeft = TRUE;
 
 		// "copy"
 		$item = &$this->ListOptions->Add("copy");
 		$item->CssStyle = "white-space: nowrap;";
-		$item->Visible = $Security->IsLoggedIn();
+		$item->Visible = $Security->CanAdd();
 		$item->OnLeft = TRUE;
 
 		// "delete"
 		$item = &$this->ListOptions->Add("delete");
 		$item->CssStyle = "white-space: nowrap;";
-		$item->Visible = $Security->IsLoggedIn();
+		$item->Visible = $Security->CanDelete();
 		$item->OnLeft = TRUE;
 
 		// List actions
@@ -1649,7 +1670,11 @@ class cparametros_list extends cparametros {
 				$option->UseButtonGroup = TRUE; // Use button group for grid delete button
 				$option->UseImageAndText = TRUE; // Use image and text for grid delete button
 				$oListOpt = &$option->Items["griddelete"];
-				$oListOpt->Body = "<a class=\"ewGridLink ewGridDelete\" title=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" onclick=\"return ew_DeleteGridRow(this, " . $this->RowIndex . ");\">" . $Language->Phrase("DeleteLink") . "</a>";
+				if (!$Security->CanDelete() && is_numeric($this->RowIndex) && ($this->RowAction == "" || $this->RowAction == "edit")) { // Do not allow delete existing record
+					$oListOpt->Body = "&nbsp;";
+				} else {
+					$oListOpt->Body = "<a class=\"ewGridLink ewGridDelete\" title=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" onclick=\"return ew_DeleteGridRow(this, " . $this->RowIndex . ");\">" . $Language->Phrase("DeleteLink") . "</a>";
+				}
 			}
 		}
 
@@ -1680,14 +1705,14 @@ class cparametros_list extends cparametros {
 
 		// "view"
 		$oListOpt = &$this->ListOptions->Items["view"];
-		if ($Security->IsLoggedIn())
+		if ($Security->CanView())
 			$oListOpt->Body = "<a class=\"ewRowLink ewView\" title=\"" . ew_HtmlTitle($Language->Phrase("ViewLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("ViewLink")) . "\" href=\"" . ew_HtmlEncode($this->ViewUrl) . "\">" . $Language->Phrase("ViewLink") . "</a>";
 		else
 			$oListOpt->Body = "";
 
 		// "edit"
 		$oListOpt = &$this->ListOptions->Items["edit"];
-		if ($Security->IsLoggedIn()) {
+		if ($Security->CanEdit()) {
 			$oListOpt->Body = "<a class=\"ewRowLink ewEdit\" title=\"" . ew_HtmlTitle($Language->Phrase("EditLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("EditLink")) . "\" href=\"" . ew_HtmlEncode($this->EditUrl) . "\">" . $Language->Phrase("EditLink") . "</a>";
 			$oListOpt->Body .= "<a class=\"ewRowLink ewInlineEdit\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineEditLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineEditLink")) . "\" href=\"" . ew_HtmlEncode(ew_GetHashUrl($this->InlineEditUrl, $this->PageObjName . "_row_" . $this->RowCnt)) . "\">" . $Language->Phrase("InlineEditLink") . "</a>";
 		} else {
@@ -1696,7 +1721,7 @@ class cparametros_list extends cparametros {
 
 		// "copy"
 		$oListOpt = &$this->ListOptions->Items["copy"];
-		if ($Security->IsLoggedIn()) {
+		if ($Security->CanAdd()) {
 			$oListOpt->Body = "<a class=\"ewRowLink ewCopy\" title=\"" . ew_HtmlTitle($Language->Phrase("CopyLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("CopyLink")) . "\" href=\"" . ew_HtmlEncode($this->CopyUrl) . "\">" . $Language->Phrase("CopyLink") . "</a>";
 			$oListOpt->Body .= "<a class=\"ewRowLink ewInlineCopy\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineCopyLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineCopyLink")) . "\" href=\"" . ew_HtmlEncode($this->InlineCopyUrl) . "\">" . $Language->Phrase("InlineCopyLink") . "</a>";
 		} else {
@@ -1705,7 +1730,7 @@ class cparametros_list extends cparametros {
 
 		// "delete"
 		$oListOpt = &$this->ListOptions->Items["delete"];
-		if ($Security->IsLoggedIn())
+		if ($Security->CanDelete())
 			$oListOpt->Body = "<a class=\"ewRowLink ewDelete\"" . "" . " title=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("DeleteLink")) . "\" href=\"" . ew_HtmlEncode($this->DeleteUrl) . "\">" . $Language->Phrase("DeleteLink") . "</a>";
 		else
 			$oListOpt->Body = "";
@@ -1760,21 +1785,21 @@ class cparametros_list extends cparametros {
 		// Add
 		$item = &$option->Add("add");
 		$item->Body = "<a class=\"ewAddEdit ewAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("AddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddLink")) . "\" href=\"" . ew_HtmlEncode($this->AddUrl) . "\">" . $Language->Phrase("AddLink") . "</a>";
-		$item->Visible = ($this->AddUrl <> "" && $Security->IsLoggedIn());
+		$item->Visible = ($this->AddUrl <> "" && $Security->CanAdd());
 
 		// Inline Add
 		$item = &$option->Add("inlineadd");
 		$item->Body = "<a class=\"ewAddEdit ewInlineAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("InlineAddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("InlineAddLink")) . "\" href=\"" . ew_HtmlEncode($this->InlineAddUrl) . "\">" .$Language->Phrase("InlineAddLink") . "</a>";
-		$item->Visible = ($this->InlineAddUrl <> "" && $Security->IsLoggedIn());
+		$item->Visible = ($this->InlineAddUrl <> "" && $Security->CanAdd());
 		$item = &$option->Add("gridadd");
 		$item->Body = "<a class=\"ewAddEdit ewGridAdd\" title=\"" . ew_HtmlTitle($Language->Phrase("GridAddLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridAddLink")) . "\" href=\"" . ew_HtmlEncode($this->GridAddUrl) . "\">" . $Language->Phrase("GridAddLink") . "</a>";
-		$item->Visible = ($this->GridAddUrl <> "" && $Security->IsLoggedIn());
+		$item->Visible = ($this->GridAddUrl <> "" && $Security->CanAdd());
 
 		// Add grid edit
 		$option = $options["addedit"];
 		$item = &$option->Add("gridedit");
 		$item->Body = "<a class=\"ewAddEdit ewGridEdit\" title=\"" . ew_HtmlTitle($Language->Phrase("GridEditLink")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("GridEditLink")) . "\" href=\"" . ew_HtmlEncode($this->GridEditUrl) . "\">" . $Language->Phrase("GridEditLink") . "</a>";
-		$item->Visible = ($this->GridEditUrl <> "" && $Security->IsLoggedIn());
+		$item->Visible = ($this->GridEditUrl <> "" && $Security->CanEdit());
 		$option = $options["action"];
 
 		// Set up options default
@@ -1848,7 +1873,7 @@ class cparametros_list extends cparametros {
 					$option->UseImageAndText = TRUE;
 					$item = &$option->Add("addblankrow");
 					$item->Body = "<a class=\"ewAddEdit ewAddBlankRow\" title=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" href=\"javascript:void(0);\" onclick=\"ew_AddGridRow(this);\">" . $Language->Phrase("AddBlankRow") . "</a>";
-					$item->Visible = $Security->IsLoggedIn();
+					$item->Visible = $Security->CanAdd();
 				}
 				$option = &$options["action"];
 				$option->UseDropDownButton = FALSE;
@@ -1872,7 +1897,7 @@ class cparametros_list extends cparametros {
 					$option->UseImageAndText = TRUE;
 					$item = &$option->Add("addblankrow");
 					$item->Body = "<a class=\"ewAddEdit ewAddBlankRow\" title=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" data-caption=\"" . ew_HtmlTitle($Language->Phrase("AddBlankRow")) . "\" href=\"javascript:void(0);\" onclick=\"ew_AddGridRow(this);\">" . $Language->Phrase("AddBlankRow") . "</a>";
-					$item->Visible = $Security->IsLoggedIn();
+					$item->Visible = $Security->CanAdd();
 				}
 				$option = &$options["action"];
 				$option->UseDropDownButton = FALSE;
@@ -1996,6 +2021,11 @@ class cparametros_list extends cparametros {
 		// Hide search options
 		if ($this->Export <> "" || $this->CurrentAction <> "")
 			$this->SearchOptions->HideAllOptions();
+		global $Security;
+		if (!$Security->CanSearch()) {
+			$this->SearchOptions->HideAllOptions();
+			$this->FilterOptions->HideAllOptions();
+		}
 	}
 
 	function SetupListOptionsExt() {
@@ -2855,6 +2885,10 @@ class cparametros_list extends cparametros {
 	//
 	function DeleteRows() {
 		global $Language, $Security;
+		if (!$Security->CanDelete()) {
+			$this->setFailureMessage($Language->Phrase("NoDeletePermission")); // No delete permission
+			return FALSE;
+		}
 		$DeleteRows = TRUE;
 		$sSql = $this->SQL();
 		$conn = &$this->Connection();
@@ -2962,10 +2996,10 @@ class cparametros_list extends cparametros {
 			$this->co_max->SetDbValueDef($rsnew, $this->co_max->CurrentValue, 0, $this->co_max->ReadOnly);
 
 			// horas_crecimiento
-			$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, 0, $this->horas_crecimiento->ReadOnly);
+			$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, "", $this->horas_crecimiento->ReadOnly);
 
 			// horas_floracion
-			$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, 0, $this->horas_floracion->ReadOnly);
+			$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, "", $this->horas_floracion->ReadOnly);
 
 			// hum_min
 			$this->hum_min->SetDbValueDef($rsnew, $this->hum_min->CurrentValue, 0, $this->hum_min->ReadOnly);
@@ -3047,10 +3081,10 @@ class cparametros_list extends cparametros {
 		$this->co_max->SetDbValueDef($rsnew, $this->co_max->CurrentValue, 0, FALSE);
 
 		// horas_crecimiento
-		$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, 0, FALSE);
+		$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, "", FALSE);
 
 		// horas_floracion
-		$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, 0, FALSE);
+		$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, "", FALSE);
 
 		// hum_min
 		$this->hum_min->SetDbValueDef($rsnew, $this->hum_min->CurrentValue, 0, FALSE);
@@ -3446,6 +3480,8 @@ if ($parametros->CurrentAction == "gridadd") {
 
 	// Set no record found message
 	if ($parametros->CurrentAction == "" && $parametros_list->TotalRecs == 0) {
+		if (!$Security->CanList())
+			$parametros_list->setWarningMessage($Language->Phrase("NoPermission"));
 		if ($parametros_list->SearchWhere == "0=101")
 			$parametros_list->setWarningMessage($Language->Phrase("EnterSearchCriteria"));
 		else
@@ -3454,7 +3490,7 @@ if ($parametros->CurrentAction == "gridadd") {
 }
 $parametros_list->RenderOtherOptions();
 ?>
-<?php if ($Security->IsLoggedIn()) { ?>
+<?php if ($Security->CanSearch()) { ?>
 <?php if ($parametros->Export == "" && $parametros->CurrentAction == "") { ?>
 <form name="fparametroslistsrch" id="fparametroslistsrch" class="form-inline ewForm" action="<?php echo ew_CurrentPage() ?>">
 <?php $SearchPanelClass = ($parametros_list->SearchWhere <> "") ? " in" : " in"; ?>

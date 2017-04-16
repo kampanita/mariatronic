@@ -6,6 +6,7 @@ ob_start(); // Turn on output buffering
 <?php include_once ((EW_USE_ADODB) ? "adodb5/adodb.inc.php" : "ewmysql12.php") ?>
 <?php include_once "phpfn12.php" ?>
 <?php include_once "parametrosinfo.php" ?>
+<?php include_once "usuariosinfo.php" ?>
 <?php include_once "userfn12.php" ?>
 <?php
 
@@ -211,6 +212,7 @@ class cparametros_add extends cparametros {
 	//
 	function __construct() {
 		global $conn, $Language;
+		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
 		$this->TokenTimeout = ew_SessionTimeoutTime();
 
@@ -226,6 +228,9 @@ class cparametros_add extends cparametros {
 			$GLOBALS["Table"] = &$GLOBALS["parametros"];
 		}
 
+		// Table object (usuarios)
+		if (!isset($GLOBALS['usuarios'])) $GLOBALS['usuarios'] = new cusuarios();
+
 		// Page ID
 		if (!defined("EW_PAGE_ID"))
 			define("EW_PAGE_ID", 'add', TRUE);
@@ -239,6 +244,12 @@ class cparametros_add extends cparametros {
 
 		// Open connection
 		if (!isset($conn)) $conn = ew_Connect($this->DBID);
+
+		// User table object (usuarios)
+		if (!isset($UserTable)) {
+			$UserTable = new cusuarios();
+			$UserTableConn = Conn($UserTable->DBID);
+		}
 	}
 
 	// 
@@ -250,6 +261,9 @@ class cparametros_add extends cparametros {
 		// Security
 		$Security = new cAdvancedSecurity();
 		if (!$Security->IsLoggedIn()) $Security->AutoLogin();
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loading();
+		$Security->LoadCurrentUserLevel($this->ProjectID . $this->TableName);
+		if ($Security->IsLoggedIn()) $Security->TablePermission_Loaded();
 		if (!$Security->IsLoggedIn()) $this->Page_Terminate(ew_GetUrl("login.php"));
 
 		// Create form object
@@ -1032,10 +1046,10 @@ class cparametros_add extends cparametros {
 		$this->co_max->SetDbValueDef($rsnew, $this->co_max->CurrentValue, 0, FALSE);
 
 		// horas_crecimiento
-		$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, 0, FALSE);
+		$this->horas_crecimiento->SetDbValueDef($rsnew, $this->horas_crecimiento->CurrentValue, "", FALSE);
 
 		// horas_floracion
-		$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, 0, FALSE);
+		$this->horas_floracion->SetDbValueDef($rsnew, $this->horas_floracion->CurrentValue, "", FALSE);
 
 		// hum_min
 		$this->hum_min->SetDbValueDef($rsnew, $this->hum_min->CurrentValue, 0, FALSE);

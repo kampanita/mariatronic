@@ -13,18 +13,18 @@ ob_start(); // Turn on output buffering
 // Page class
 //
 
-$login = NULL; // Initialize page object first
+$changepwd = NULL; // Initialize page object first
 
-class clogin extends cusuarios {
+class cchangepwd extends cusuarios {
 
 	// Page ID
-	var $PageID = 'login';
+	var $PageID = 'changepwd';
 
 	// Project ID
 	var $ProjectID = "{524C14CD-A0E3-4083-AF86-06203077AB82}";
 
 	// Page object name
-	var $PageObjName = 'login';
+	var $PageObjName = 'changepwd';
 
 	// Page name
 	function PageName() {
@@ -201,7 +201,7 @@ class clogin extends cusuarios {
 		global $conn, $Language;
 		global $UserTable, $UserTableConn;
 		$GLOBALS["Page"] = &$this;
-		$this->TokenTimeout = 48 * 60 * 60; // 48 hours for login
+		$this->TokenTimeout = ew_SessionTimeoutTime();
 
 		// Language object
 		if (!isset($Language)) $Language = new cLanguage();
@@ -218,7 +218,7 @@ class clogin extends cusuarios {
 
 		// Page ID
 		if (!defined("EW_PAGE_ID"))
-			define("EW_PAGE_ID", 'login', TRUE);
+			define("EW_PAGE_ID", 'changepwd', TRUE);
 
 		// Start timer
 		if (!isset($GLOBALS["gTimer"])) $GLOBALS["gTimer"] = new cTimer();
@@ -241,6 +241,12 @@ class clogin extends cusuarios {
 
 		// Security
 		$Security = new cAdvancedSecurity();
+		if (!IsPasswordReset()) {
+		if (!$Security->IsLoggedIn()) $Security->AutoLogin();
+		if (!$Security->IsLoggedIn() || $Security->IsSysAdmin())
+			$this->Page_Terminate(ew_GetUrl("login.php"));
+		$Security->LoadCurrentUserLevel($this->ProjectID . 'usuarios');
+		}
 		$this->CurrentAction = (@$_GET["a"] <> "") ? $_GET["a"] : @$_POST["a_list"]; // Set up current action
 
 		// Global Page Loading event (in userfn*.php)
@@ -286,147 +292,111 @@ class clogin extends cusuarios {
 		}
 		exit();
 	}
-	var $Username;
-	var $LoginType;
+	var $OldPassword = "";
+	var $NewPassword = "";
+	var $ConfirmedPassword = "";
 
-	//
+	// 
 	// Page main
 	//
 	function Page_Main() {
-		global $Security, $Language, $UserProfile, $gsFormError;
+		global $UserTableConn, $Language, $Security, $gsFormError;
 		global $Breadcrumb;
-		$url = substr(ew_CurrentUrl(), strrpos(ew_CurrentUrl(), "/")+1);
 		$Breadcrumb = new cBreadcrumb;
-		$Breadcrumb->Add("login", "LoginPage", $url, "", "", TRUE);
-		$sPassword = "";
-		$sLastUrl = $Security->LastUrl(); // Get last URL
-		if ($sLastUrl == "")
-			$sLastUrl = "index.php";
-
-		// If session expired, show session expired message
-		if (@$_GET["expired"] == "1")
-			$this->setFailureMessage($Language->Phrase("SessionExpired"));
-		if (IsLoggingIn()) {
-			$this->Username = @$_SESSION[EW_SESSION_USER_PROFILE_USER_NAME];
-			$sPassword = @$_SESSION[EW_SESSION_USER_PROFILE_PASSWORD];
-			$this->LoginType = @$_SESSION[EW_SESSION_USER_PROFILE_LOGIN_TYPE];
-			$bValidPwd = $Security->ValidateUser($this->Username, $sPassword, FALSE);
-			if ($bValidPwd) {
-				$_SESSION[EW_SESSION_USER_PROFILE_USER_NAME] = "";
-				$_SESSION[EW_SESSION_USER_PROFILE_PASSWORD] = "";
-				$_SESSION[EW_SESSION_USER_PROFILE_LOGIN_TYPE] = "";
+		$Breadcrumb->Add("changepwd", "ChangePwdPage", ew_CurrentUrl(), "", "", TRUE);
+		$bPostBack = ew_IsHttpPost();
+		$bValidate = TRUE;
+		if ($bPostBack) {
+			$this->OldPassword = ew_StripSlashes(@$_POST["opwd"]);
+			$this->NewPassword = ew_StripSlashes(@$_POST["npwd"]);
+			$this->ConfirmedPassword = ew_StripSlashes(@$_POST["cpwd"]);
+			$bValidate = $this->ValidateForm($this->OldPassword, $this->NewPassword, $this->ConfirmedPassword);
+			if (!$bValidate) {
+				$this->setFailureMessage($gsFormError);
 			}
-		} else {
-			if (!$Security->IsLoggedIn())
-				$Security->AutoLogin();
-			$this->Username = ""; // Initialize
-			$encrypted = FALSE;
-			if (isset($_POST["username"])) {
-				$this->Username = ew_RemoveXSS(ew_StripSlashes($_POST["username"]));
-				$sPassword = ew_RemoveXSS(ew_StripSlashes(@$_POST["password"]));
-				$this->LoginType = strtolower(ew_RemoveXSS(@$_POST["type"]));
-			} else if (EW_ALLOW_LOGIN_BY_URL && isset($_GET["username"])) {
-				$this->Username = ew_RemoveXSS(ew_StripSlashes($_GET["username"]));
-				$sPassword = ew_RemoveXSS(ew_StripSlashes(@$_GET["password"]));
-				$this->LoginType = strtolower(ew_RemoveXSS(@$_GET["type"]));
-				$encrypted = !empty($_GET["encrypted"]);
-			}
-			if ($this->Username <> "") {
-				$bValidate = $this->ValidateForm($this->Username, $sPassword);
-				if (!$bValidate)
-					$this->setFailureMessage($gsFormError);
-				$_SESSION[EW_SESSION_USER_PROFILE_USER_NAME] = $this->Username; // Save login user name
-				$_SESSION[EW_SESSION_USER_PROFILE_LOGIN_TYPE] = $this->LoginType; // Save login type
-			} else {
-				if ($Security->IsLoggedIn()) {
-					if ($this->getFailureMessage() == "")
-						$this->Page_Terminate($sLastUrl); // Return to last accessed page
-				}
-				$bValidate = FALSE;
+		}
+		$bPwdUpdated = FALSE;
+		if ($bPostBack && $bValidate) {
 
-				// Restore settings
-				if (@$_COOKIE[EW_PROJECT_NAME]['Checksum'] == strval(crc32(md5(EW_RANDOM_KEY))))
-					$this->Username = ew_Decrypt(@$_COOKIE[EW_PROJECT_NAME]['Username']);
-				if (@$_COOKIE[EW_PROJECT_NAME]['AutoLogin'] == "autologin") {
-					$this->LoginType = "a";
-				} elseif (@$_COOKIE[EW_PROJECT_NAME]['AutoLogin'] == "rememberusername") {
-					$this->LoginType = "u";
-				} else {
-					$this->LoginType = "";
-				}
-			}
-			$bValidPwd = FALSE;
-			if ($bValidate) {
+			// Setup variables
+			$sUsername = $Security->CurrentUserName();
+			if (IsPasswordReset())
+				$sUsername = $_SESSION[EW_SESSION_USER_PROFILE_USER_NAME];
+			$sFilter = str_replace("%u", ew_AdjustSql($sUsername, EW_USER_TABLE_DBID), EW_USER_NAME_FILTER);
 
-				// Call Logging In event
-				$bValidate = $this->User_LoggingIn($this->Username, $sPassword);
-				if ($bValidate) {
-					$bValidPwd = $Security->ValidateUser($this->Username, $sPassword, FALSE, $encrypted); // Manual login
-					if (!$bValidPwd) {
-						if ($this->getFailureMessage() == "")
-							$this->setFailureMessage($Language->Phrase("InvalidUidPwd")); // Invalid user id/password
+			// Set up filter (Sql Where Clause) and get Return SQL
+			// SQL constructor in usuarios class, usuariosinfo.php
+
+			$this->CurrentFilter = $sFilter;
+			$sSql = $this->SQL();
+			if ($rs = $UserTableConn->Execute($sSql)) {
+				if (!$rs->EOF) {
+					$rsold = $rs->fields;
+					if (IsPasswordReset() || ew_ComparePassword($rsold['passwd'], $this->OldPassword)) {
+						$bValidPwd = TRUE;
+						if (!IsPasswordReset())
+							$bValidPwd = $this->User_ChangePassword($rsold, $sUsername, $this->OldPassword, $this->NewPassword);
+						if ($bValidPwd) {
+							$rsnew = array('passwd' => $this->NewPassword); // Change Password
+							$rs->Close();
+							$UserTableConn->raiseErrorFn = $GLOBALS["EW_ERROR_FN"];
+							$bValidPwd = $this->Update($rsnew);
+							$UserTableConn->raiseErrorFn = '';
+							if ($bValidPwd)
+								$bPwdUpdated = TRUE;
+						} else {
+							$this->setFailureMessage($Language->Phrase("InvalidNewPassword"));
+							$rs->Close();
+						}
+					} else {
+						$this->setFailureMessage($Language->Phrase("InvalidPassword"));
 					}
 				} else {
-					if ($this->getFailureMessage() == "")
-						$this->setFailureMessage($Language->Phrase("LoginCancelled")); // Login cancelled
+					$rs->Close();
 				}
 			}
 		}
-		if ($bValidPwd) {
-
-			// Write cookies
-			if ($this->LoginType == "a") { // Auto login
-				setcookie(EW_PROJECT_NAME . '[AutoLogin]',  "autologin", EW_COOKIE_EXPIRY_TIME); // Set autologin cookie
-				setcookie(EW_PROJECT_NAME . '[Username]', ew_Encrypt($this->Username), EW_COOKIE_EXPIRY_TIME); // Set user name cookie
-				setcookie(EW_PROJECT_NAME . '[Password]', ew_Encrypt($sPassword), EW_COOKIE_EXPIRY_TIME); // Set password cookie
-				setcookie(EW_PROJECT_NAME . '[Checksum]', crc32(md5(EW_RANDOM_KEY)), EW_COOKIE_EXPIRY_TIME);
-			} elseif ($this->LoginType == "u") { // Remember user name
-				setcookie(EW_PROJECT_NAME . '[AutoLogin]', "rememberusername", EW_COOKIE_EXPIRY_TIME); // Set remember user name cookie
-				setcookie(EW_PROJECT_NAME . '[Username]', ew_Encrypt($this->Username), EW_COOKIE_EXPIRY_TIME); // Set user name cookie
-				setcookie(EW_PROJECT_NAME . '[Checksum]', crc32(md5(EW_RANDOM_KEY)), EW_COOKIE_EXPIRY_TIME);
-			} else {
-				setcookie(EW_PROJECT_NAME . '[AutoLogin]', "", EW_COOKIE_EXPIRY_TIME); // Clear auto login cookie
+		if ($bPwdUpdated) {
+			if ($this->getSuccessMessage() == "")
+				$this->setSuccessMessage($Language->Phrase("PasswordChanged")); // Set up success message
+			if (IsPasswordReset()) {
+				$_SESSION[EW_SESSION_STATUS] = "";
+				$_SESSION[EW_SESSION_USER_PROFILE_USER_NAME] = "";
 			}
-
-			// Call loggedin event
-			$this->User_LoggedIn($this->Username);
-			$this->Page_Terminate($sLastUrl); // Return to last accessed URL
-		} elseif ($this->Username <> "" && $sPassword <> "") {
-
-			// Call user login error event
-			$this->User_LoginError($this->Username, $sPassword);
+			$this->Page_Terminate("index.php"); // Exit page and clean up
 		}
 	}
 
-	//
 	// Validate form
-	//
-	function ValidateForm($usr, $pwd) {
+	function ValidateForm($opwd, $npwd, $cpwd) {
 		global $Language, $gsFormError;
-
-		// Initialize form error message
-		$gsFormError = "";
 
 		// Check if validation required
 		if (!EW_SERVER_VALIDATE)
 			return TRUE;
-		if (trim($usr) == "") {
-			ew_AddMessage($gsFormError, $Language->Phrase("EnterUid"));
+
+		// Initialize form error message
+		$gsFormError = "";
+		if (!IsPasswordReset() && $opwd == "") {
+			ew_AddMessage($gsFormError, $Language->Phrase("EnterOldPassword"));
 		}
-		if (trim($pwd) == "") {
-			ew_AddMessage($gsFormError, $Language->Phrase("EnterPwd"));
+		if ($npwd == "") {
+			ew_AddMessage($gsFormError, $Language->Phrase("EnterNewPassword"));
+		}
+		if ($npwd <> $cpwd) {
+			ew_AddMessage($gsFormError, $Language->Phrase("MismatchPassword"));
 		}
 
 		// Return validate result
-		$ValidateForm = ($gsFormError == "");
+		$valid = ($gsFormError == "");
 
-		// Call Form Custom Validate event
+		// Call Form CustomValidate event
 		$sFormCustomError = "";
-		$ValidateForm = $ValidateForm && $this->Form_CustomValidate($sFormCustomError);
+		$valid = $valid && $this->Form_CustomValidate($sFormCustomError);
 		if ($sFormCustomError <> "") {
 			ew_AddMessage($gsFormError, $sFormCustomError);
 		}
-		return $ValidateForm;
+		return $valid;
 	}
 
 	// Page Load event
@@ -480,25 +450,11 @@ class clogin extends cusuarios {
 
 	}
 
-	// User Logging In event
-	function User_LoggingIn($usr, &$pwd) {
+	// Email Sending event
+	function Email_Sending(&$Email, &$Args) {
 
-		// Enter your code here
-		// To cancel, set return value to FALSE
-
+		//var_dump($Email); var_dump($Args); exit();
 		return TRUE;
-	}
-
-	// User Logged In event
-	function User_LoggedIn($usr) {
-
-		//echo "User Logged In";
-	}
-
-	// User Login Error event
-	function User_LoginError($usr, $pwd) {
-
-		//echo "User Login Error";
 	}
 
 	// Form Custom Validate event
@@ -507,25 +463,32 @@ class clogin extends cusuarios {
 		// Return error message in CustomError
 		return TRUE;
 	}
+
+	// User ChangePassword event
+	function User_ChangePassword(&$rs, $usr, $oldpwd, &$newpwd) {
+
+		// Return FALSE to abort
+		return TRUE;
+	}
 }
 ?>
 <?php ew_Header(TRUE) ?>
 <?php
 
 // Create page object
-if (!isset($login)) $login = new clogin();
+if (!isset($changepwd)) $changepwd = new cchangepwd();
 
 // Page init
-$login->Page_Init();
+$changepwd->Page_Init();
 
 // Page main
-$login->Page_Main();
+$changepwd->Page_Main();
 
 // Global Page Rendering event (in userfn*.php)
 Page_Rendering();
 
 // Page Rendering event
-$login->Page_Render();
+$changepwd->Page_Render();
 ?>
 <?php include_once "header.php" ?>
 <script type="text/javascript">
@@ -533,26 +496,31 @@ $login->Page_Render();
 // Write your client script here, no need to add script tags.
 </script>
 <script type="text/javascript">
-var flogin = new ew_Form("flogin");
+var fchangepwd = new ew_Form("fchangepwd");
 
-// Validate function
-flogin.Validate = function()
-{
-	var fobj = this.Form;
+// Extend form with Validate function
+fchangepwd.Validate = function() {
+	var $ = jQuery, fobj = this.Form, $npwd = $(fobj.npwd);
 	if (!this.ValidateRequired)
 		return true; // Ignore validation
-	if (!ew_HasValue(fobj.username))
-		return this.OnError(fobj.username, ewLanguage.Phrase("EnterUid"));
-	if (!ew_HasValue(fobj.password))
-		return this.OnError(fobj.password, ewLanguage.Phrase("EnterPwd"));
+<?php if (!IsPasswordReset()) { ?>
+	if (!ew_HasValue(fobj.opwd))
+		return this.OnError(fobj.opwd, ewLanguage.Phrase("EnterOldPassword"));
+<?php } ?>
+	if (!ew_HasValue(fobj.npwd))
+		return this.OnError(fobj.npwd, ewLanguage.Phrase("EnterNewPassword"));
+	if ($npwd.hasClass("ewPasswordStrength") && !$npwd.data("validated"))
+		return this.OnError(fobj.npwd, ewLanguage.Phrase("PasswordTooSimple"));
+	if (fobj.npwd.value != fobj.cpwd.value)
+		return this.OnError(fobj.cpwd, ewLanguage.Phrase("MismatchPassword"));
 
 	// Call Form Custom Validate event
 	if (!this.Form_CustomValidate(fobj)) return false;
 	return true;
 }
 
-// Form_CustomValidate function
-flogin.Form_CustomValidate = 
+// Extend form with Form_CustomValidate function
+fchangepwd.Form_CustomValidate = 
  function(fobj) { // DO NOT CHANGE THIS LINE!
 
  	// Your custom validation code here, return false if invalid. 
@@ -561,9 +529,9 @@ flogin.Form_CustomValidate =
 
 // Requires js validation
 <?php if (EW_CLIENT_VALIDATE) { ?>
-flogin.ValidateRequired = true;
+fchangepwd.ValidateRequired = true;
 <?php } else { ?>
-flogin.ValidateRequired = false;
+fchangepwd.ValidateRequired = false;
 <?php } ?>
 </script>
 <div class="ewToolbar">
@@ -571,50 +539,55 @@ flogin.ValidateRequired = false;
 <?php echo $Language->SelectionForm(); ?>
 <div class="clearfix"></div>
 </div>
-<?php $login->ShowPageHeader(); ?>
+<?php $changepwd->ShowPageHeader(); ?>
 <?php
-$login->ShowMessage();
+$changepwd->ShowMessage();
 ?>
-<form name="flogin" id="flogin" class="form-horizontal ewForm ewLoginForm" action="<?php echo ew_CurrentPage() ?>" method="post">
-<?php if ($login->CheckToken) { ?>
-<input type="hidden" name="<?php echo EW_TOKEN_NAME ?>" value="<?php echo $login->Token ?>">
+<form name="fchangepwd" id="fchangepwd" class="form-horizontal ewForm ewChangepwdForm" action="<?php echo ew_CurrentPage() ?>" method="post">
+<?php if ($changepwd->CheckToken) { ?>
+<input type="hidden" name="<?php echo EW_TOKEN_NAME ?>" value="<?php echo $changepwd->Token ?>">
+<?php } ?>
+<!-- Fields to prevent google autofill -->
+<input class="hidden" type="text" name="<?php echo ew_Encrypt(ew_Random()) ?>">
+<input class="hidden" type="password" name="<?php echo ew_Encrypt(ew_Random()) ?>">
+<?php if (!IsPasswordReset()) { ?>
+	<div class="form-group">
+		<label class="col-sm-2 control-label ewLabel" for="opwd"><?php echo $Language->Phrase("OldPassword") ?></label>
+		<div class="col-sm-10"><input type="password" name="opwd" id="opwd" class="form-control ewControl" placeholder="<?php echo ew_HtmlEncode($Language->Phrase("OldPassword")) ?>"></div>
+	</div>
 <?php } ?>
 	<div class="form-group">
-		<label class="col-sm-2 control-label ewLabel" for="username"><?php echo $Language->Phrase("Username") ?></label>
-		<div class="col-sm-10"><input type="text" name="username" id="username" class="form-control ewControl" value="<?php echo ew_HtmlEncode($login->Username) ?>" placeholder="<?php echo ew_HtmlEncode($Language->Phrase("Username")) ?>"></div>
+		<label class="col-sm-2 control-label ewLabel" for="npwd"><?php echo $Language->Phrase("NewPassword") ?></label>
+		<div class="col-sm-10">
+		<div class="input-group" id="ignpwd">
+		<input type="password" data-password-strength="pst_npwd" data-password-generated="pgt_npwd" name="npwd" id="npwd" class="form-control ewControl ewPasswordStrength" placeholder="<?php echo ew_HtmlEncode($Language->Phrase("NewPassword")) ?>">
+		<span class="input-group-btn">
+			<button type="button" class="btn btn-default ewPasswordGenerator" title="<?php echo ew_HtmlTitle($Language->Phrase("GeneratePassword")) ?>" data-password-field="npwd" data-password-confirm="cpwd" data-password-strength="pst_npwd" data-password-generated="pgt_npwd"><?php echo $Language->Phrase("GeneratePassword") ?></button>
+		</span>
+		</div>
+		<span class="help-block" id="pgt_npwd" style="display: none;"></span>
+		<div class="progress ewPasswordStrengthBar" id="pst_npwd" style="display: none;">
+			<div class="progress-bar" role="progressbar"></div>
+		</div>
+		</div>
 	</div>
 	<div class="form-group">
-		<label class="col-sm-2 control-label ewLabel" for="password"><?php echo $Language->Phrase("Password") ?></label>
-		<div class="col-sm-10"><input type="password" name="password" id="password" class="form-control ewControl" placeholder="<?php echo ew_HtmlEncode($Language->Phrase("Password")) ?>"></div>
-	</div>
-	<div class="form-group">
-		<div class="col-sm-offset-2 col-sm-10">
-			<a id="ewLoginOptions" class="collapsed" data-toggle="collapse" data-target="#flogin_options"><?php echo $Language->Phrase("LoginOptions") ?> <span class="icon-arrow"></span></a>
-			<div id="flogin_options" class="collapse">
-					<div class="radio ewRadio">
-					<label for="type1"><input type="radio" name="type" id="type1" value="a"<?php if ($login->LoginType == "a") { ?> checked="checked"<?php } ?>><?php echo $Language->Phrase("AutoLogin") ?></label>
-					</div>
-					<div class="radio ewRadio">
-					<label for="type2"><input type="radio" name="type" id="type2" value="u"<?php if ($login->LoginType == "u") { ?>  checked="checked"<?php } ?>><?php echo $Language->Phrase("SaveUserName") ?></label>
-					</div>
-					<div class="radio ewRadio">
-					<label for="type3"><input type="radio" name="type" id="type3" value=""<?php if ($login->LoginType == "") { ?> checked="checked"<?php } ?>><?php echo $Language->Phrase("AlwaysAsk") ?></label>
-					</div>
-			</div>
+		<label class="col-sm-2 control-label ewLabel" for="cpwd"><?php echo $Language->Phrase("ConfirmPassword") ?></label>
+		<div class="col-sm-10">
+		<input type="password" name="cpwd" id="cpwd" class="form-control ewControl" placeholder="<?php echo ew_HtmlEncode($Language->Phrase("ConfirmPassword")) ?>">
 		</div>
 	</div>
 	<div class="form-group">
 		<div class="col-sm-offset-2 col-sm-10">
-			<button class="btn btn-primary ewButton" name="btnsubmit" id="btnsubmit" type="submit"><?php echo $Language->Phrase("Login") ?></button>
+			<button class="btn btn-primary ewButton" name="btnsubmit" id="btnsubmit" type="submit"><?php echo $Language->Phrase("ChangePwdBtn") ?></button>
 		</div>
 	</div>
 </form>
-<br>
 <script type="text/javascript">
-flogin.Init();
+fchangepwd.Init();
 </script>
 <?php
-$login->ShowPageFooter();
+$changepwd->ShowPageFooter();
 if (EW_DEBUG_ENABLED)
 	echo ew_DebugMsg();
 ?>
@@ -626,5 +599,5 @@ if (EW_DEBUG_ENABLED)
 </script>
 <?php include_once "footer.php" ?>
 <?php
-$login->Page_Terminate();
+$changepwd->Page_Terminate();
 ?>
