@@ -107,11 +107,6 @@ var ewVar = <?php echo json_encode($EW_CLIENT_VAR); ?>;
 
 // Write your client script here, no need to add script tags.
 </script>
-<style>
- .kepa_container {position:relative;}
- .kepa_image{position:absolute;left:46%;top:5%;height:90%;}
-</style>
-<link rel="icon" href="<?php echo $EW_RELATIVE_PATH ?>/favicon.png"  />
 <?php } ?>
 <meta name="generator" content="PHPMaker v12.0.2">
 </head>
@@ -119,11 +114,11 @@ var ewVar = <?php echo json_encode($EW_CLIENT_VAR); ?>;
 <?php if (@!$gbSkipHeaderFooter) { ?>
 <?php if (@$gsExport == "") { ?>
 <div class="ewLayout">
-	<!-- header (begin) --><!-- *** Note: Only licensed users are allowed to change the logo *** class="<?php echo $gsHeaderRowClass ?>">   -->
-	<div id="ewHeaderRow" class="kepa_container"> <img src="<?php echo $EW_RELATIVE_PATH ?>phpimages/phpmkrlogo1.png" alt="" style="width: 100%;"><center>
+	<!-- header (begin) --><!-- *** Note: Only licensed users are allowed to change the logo *** -->
+	<div id="ewHeaderRow" class="<?php echo $gsHeaderRowClass ?>"><img src="<?php echo $EW_RELATIVE_PATH ?>phpimages/phpmkrlogo1.png" alt="" style="width: 100%;"><center>
 	
-	  <img src="<?php echo $EW_RELATIVE_PATH ?>phpimages/mariatronik.jpg" class="kepa_image">
-		<!--<h2><span class="label label-success">MariaTronik</span></h2>-->
+	  <img src="<?php echo $EW_RELATIVE_PATH ?>phpimages/mariatronik.jpg">	
+		<h2><span class="label label-success">MariaTronik</span></h2>
 		
 		</center>
 	</div>
